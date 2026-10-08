@@ -99,7 +99,7 @@ export function PosSidebar({
         />
       )}
       <aside
-        className={`pos-sidebar fixed inset-y-0 left-0 z-50 flex w-[240px] shrink-0 flex-col overflow-y-auto lg:static ${isOpen ? "" : "hidden lg:flex"}`}
+        className={`pos-sidebar fixed inset-y-0 left-0 z-50 flex w-[240px] shrink-0 flex-col overflow-y-auto lg:sticky lg:top-0 lg:h-dvh lg:self-start ${isOpen ? "" : "hidden lg:flex"}`}
       >
         <div className="flex h-[72px] shrink-0 items-center gap-3 border-b border-slate-800 px-5">
           <span className="grid size-9 place-items-center rounded-xl bg-teal-500 text-slate-950">
