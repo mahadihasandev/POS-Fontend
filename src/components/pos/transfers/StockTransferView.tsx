@@ -133,11 +133,11 @@ export function StockTransferView({
       {/* Header bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-lg bg-cyan-50 text-cyan-700 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
             <ArrowRightLeft className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-base font-semibold text-slate-900 tracking-tight">
               Stock Transfer Management
             </h1>
             <p className="text-xs text-slate-500">
@@ -178,7 +178,7 @@ export function StockTransferView({
         {/* Form panel (7 cols) */}
         <form onSubmit={handleSubmit} className="lg:col-span-7 space-y-4">
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
               {transferType === "warehouse"
                 ? "Warehouse Route"
                 : "Company Route"}
@@ -304,7 +304,7 @@ export function StockTransferView({
                               ),
                             )
                           }
-                          className="w-20 text-center py-1 border border-slate-300 rounded-md font-extrabold text-cyan-800"
+                          className="w-20 text-center py-1 border border-slate-300 rounded-md font-semibold text-teal-800"
                         />
                       </td>
                       <td className="p-2.5 text-center">
@@ -337,7 +337,7 @@ export function StockTransferView({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs transition shadow-xs flex items-center gap-1.5"
+                className="px-4 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs transition shadow-xs flex items-center gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>
@@ -353,7 +353,7 @@ export function StockTransferView({
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div className="flex items-center gap-2">
               <History className="w-4 h-4 text-slate-500" />
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700">
                 Recent Stock Transfer Logs
               </h2>
             </div>
@@ -368,10 +368,10 @@ export function StockTransferView({
               transferList.map((trf) => (
                 <div
                   key={trf.id}
-                  className="p-3 rounded-lg border border-slate-200 bg-slate-50/60 text-xs space-y-1 hover:border-cyan-300 transition"
+                  className="p-3 rounded-lg border border-slate-200 bg-slate-50/60 text-xs space-y-1 hover:border-teal-300 transition"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-extrabold text-cyan-800">
+                    <span className="font-semibold text-teal-800">
                       {trf.transfer_no}
                     </span>
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">

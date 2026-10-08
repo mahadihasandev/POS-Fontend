@@ -32,7 +32,7 @@ export function HoldListModal({
         {/* Header */}
         <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 sm:p-2 rounded-lg bg-violet-100 text-violet-800 shrink-0">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-teal-100 text-teal-800 shrink-0">
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
@@ -72,10 +72,10 @@ export function HoldListModal({
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-extrabold text-teal-800 text-sm">
+                    <span className="font-mono font-semibold text-teal-800 text-sm">
                       {sale.invoice_id}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-violet-100 text-violet-900 border border-violet-300">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-100 text-teal-900 border border-teal-300">
                       HELD
                     </span>
                   </div>

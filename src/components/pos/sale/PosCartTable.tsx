@@ -132,7 +132,7 @@ export function PosCartTable({
               </td>
 
               {/* Subtotal */}
-              <td className="py-2 px-3 text-right font-mono font-extrabold text-teal-800">
+              <td className="py-2 px-3 text-right font-mono font-semibold text-teal-800">
                 {item.subtotal.toFixed(2)}
               </td>
 

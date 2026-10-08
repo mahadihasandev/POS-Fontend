@@ -81,7 +81,9 @@ export function PosSidebar({
   isOpen,
   onClose,
 }: PosSidebarProps) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<
+    Record<string, { tab: string; open: boolean }>
+  >({});
   const allowed = (id: string) => canOpenTab(id, userPermissions, isAdmin);
   const go = (id: string) => {
     onSelectTab(id);
@@ -99,7 +101,7 @@ export function PosSidebar({
         />
       )}
       <aside
-        className={`pos-sidebar fixed inset-y-0 left-0 z-50 flex w-[240px] shrink-0 flex-col overflow-y-auto lg:sticky lg:top-0 lg:h-dvh lg:self-start ${isOpen ? "" : "hidden lg:flex"}`}
+        className={`pos-sidebar fixed inset-y-0 left-0 z-50 flex w-[240px] shrink-0 flex-col overflow-hidden lg:sticky lg:top-0 lg:h-dvh lg:self-start ${isOpen ? "" : "hidden lg:flex"}`}
       >
         <div className="flex h-[72px] shrink-0 items-center gap-3 border-b border-slate-800 px-5">
           <span className="grid size-9 place-items-center rounded-xl bg-teal-500 text-slate-950">
@@ -121,12 +123,16 @@ export function PosSidebar({
             <X size={18} />
           </button>
         </div>
-        <nav aria-label="Main navigation" className="flex-1 space-y-1.5 p-3">
+        <nav
+          aria-label="Main navigation"
+          className="min-h-0 flex-1 overflow-y-auto space-y-1.5 p-3"
+        >
           <p className="px-3 py-3 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-400">
             Overview
           </p>
           {allowed("dashboard") && (
             <button
+              aria-current={activeTab === "dashboard" ? "page" : undefined}
               className={`${itemClass("dashboard")} flex gap-3 items-center`}
               onClick={() => go("dashboard")}
             >
@@ -141,14 +147,22 @@ export function PosSidebar({
             const visible = items.filter(([id]) => allowed(id));
             if (!visible.length) return null;
             const childActive = visible.some(([id]) => id === activeTab);
+            const override = expanded[title];
             const open =
-              expanded[title] ?? (childActive || title === "Inventory");
+              override?.tab === activeTab
+                ? override.open
+                : childActive || (override?.open ?? title === "Inventory");
             return (
               <div key={title}>
                 <button
                   aria-expanded={open}
                   className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] hover:bg-slate-800 ${childActive ? "text-white" : "text-slate-300"}`}
-                  onClick={() => setExpanded({ ...expanded, [title]: !open })}
+                  onClick={() =>
+                    setExpanded({
+                      ...expanded,
+                      [title]: { tab: activeTab, open: !open },
+                    })
+                  }
                 >
                   <Icon size={17} />
                   <span className="flex-1 text-left">{title}</span>
@@ -159,6 +173,7 @@ export function PosSidebar({
                     {visible.map(([id, label]) => (
                       <button
                         key={id}
+                        aria-current={activeTab === id ? "page" : undefined}
                         className={itemClass(id)}
                         onClick={() => go(id)}
                       >
@@ -172,6 +187,7 @@ export function PosSidebar({
           })}
           {allowed("reports") && (
             <button
+              aria-current={activeTab === "reports" ? "page" : undefined}
               className={`${itemClass("reports")} flex items-center gap-3`}
               onClick={() => go("reports")}
             >
@@ -181,6 +197,7 @@ export function PosSidebar({
           )}
           {allowed("rbac") && (
             <button
+              aria-current={activeTab === "rbac" ? "page" : undefined}
               className={`${itemClass("rbac")} flex items-center gap-3`}
               onClick={() => go("rbac")}
             >
@@ -189,7 +206,7 @@ export function PosSidebar({
             </button>
           )}
         </nav>
-        <div className="m-4 rounded-xl border border-slate-700 bg-slate-800 p-3">
+        <div className="m-4 shrink-0 rounded-xl border border-slate-700 bg-slate-800 p-3">
           <div className="flex items-center justify-between text-xs font-semibold text-white">
             Ready for your next sale
             <ArrowUpRight size={15} className="text-teal-300" />

@@ -73,7 +73,7 @@ export function PosBillingPanel({
         {/* Invoice Total */}
         <div className="flex items-center justify-between pb-1 border-b border-slate-100">
           <span className="text-slate-800 font-bold">Invoice Total</span>
-          <span className="font-mono font-extrabold text-slate-900 text-sm">
+          <span className="font-mono font-semibold text-slate-900 text-sm">
             {invoiceTotal.toFixed(2)}
           </span>
         </div>
@@ -166,10 +166,10 @@ export function PosBillingPanel({
 
         {/* Total Payable Banner */}
         <div className="p-2.5 rounded-lg bg-slate-900 text-white flex items-center justify-between shadow-xs">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-slate-200">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-200">
             Total Payable
           </span>
-          <span className="text-lg font-mono font-extrabold text-white">
+          <span className="text-lg font-mono font-semibold text-white">
             {totalPayable.toFixed(2)}{" "}
             <span className="text-[10px] text-white">TK</span>
           </span>
@@ -204,7 +204,7 @@ export function PosBillingPanel({
         {/* Receive Amount [F8] Highlight Box */}
         <div className="p-2 rounded-lg bg-amber-50 border-2 border-amber-300">
           <div className="flex items-center justify-between mb-1">
-            <label className="text-xs font-extrabold text-amber-900 flex items-center gap-1">
+            <label className="text-xs font-semibold text-amber-900 flex items-center gap-1">
               <span>Receive</span>
               <span className="font-mono bg-amber-300 text-slate-950 px-1 rounded text-[10px] font-bold">
                 [F8]
@@ -225,14 +225,14 @@ export function PosBillingPanel({
               onChangeReceivedAmount(parseFloat(e.target.value) || 0)
             }
             placeholder="0.00"
-            className="w-full h-9 px-3 text-right font-mono font-extrabold text-lg text-slate-950 bg-white border border-amber-300 rounded focus:outline-none focus:border-amber-500 shadow-xs"
+            className="w-full h-9 px-3 text-right font-mono font-semibold text-lg text-slate-950 bg-white border border-amber-300 rounded focus:outline-none focus:border-amber-500 shadow-xs"
           />
         </div>
 
         {/* Change Return (Bright Emerald Display) */}
         <div className="p-2.5 rounded-lg bg-emerald-50 border-2 border-emerald-400 flex items-center justify-between">
           <div>
-            <span className="text-xs font-extrabold text-emerald-900 block">
+            <span className="text-xs font-semibold text-emerald-900 block">
               Change Return
             </span>
             <span className="text-[10px] text-emerald-700 font-semibold">
@@ -241,7 +241,7 @@ export function PosBillingPanel({
                 : "Fully Settled"}
             </span>
           </div>
-          <span className="font-mono font-extrabold text-xl text-emerald-700">
+          <span className="font-mono font-semibold text-xl text-emerald-700">
             {changeReturn.toFixed(2)}
           </span>
         </div>
@@ -281,7 +281,7 @@ export function PosBillingPanel({
               type="button"
               disabled={isSaving || !hasItems}
               onClick={onSaveSale}
-              className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+              className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <FileCheck className="w-4 h-4" />
               <span>{isSaving ? "Saving…" : "Complete (F10)"}</span>
@@ -303,7 +303,7 @@ export function PosBillingPanel({
             type="button"
             disabled={isSaving || !hasItems || !canHold}
             onClick={onHoldSale}
-            className="w-full py-2 px-3 rounded-lg bg-amber-300 hover:bg-violet-400 active:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+            className="w-full py-2 px-3 rounded-lg bg-amber-300 hover:bg-teal-400 active:bg-teal-500 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
           >
             <PauseCircle className="w-4 h-4 text-slate-950" />
             <span>Hold Sale</span>

@@ -6,12 +6,26 @@ import {
   AlertTriangle,
   ArrowUpRight,
   RefreshCw,
+  ArrowRight,
+  Package,
+  BarChart3,
 } from "lucide-react";
 import { useGetDashboardQuery } from "@/redux/api/posApi";
+import { canOpenTab } from "@/lib/navigation";
 import { money } from "@/lib/pos";
 import { QueryState } from "../shared/QueryState";
-export function DashboardView() {
-  const { data, isLoading, error, refetch } = useGetDashboardQuery();
+export function DashboardView({
+  onNavigate,
+  permissions,
+  isAdmin,
+}: {
+  onNavigate: (tab: string) => void;
+  permissions: string[];
+  isAdmin: boolean;
+}) {
+  const allowed = (tab: string) => canOpenTab(tab, permissions, isAdmin);
+  const { data, isLoading, isFetching, error, refetch } =
+    useGetDashboardQuery();
   if (isLoading || error || !data)
     return <QueryState loading={isLoading} error={error} retry={refetch} />;
   const { metrics, accounts, recent_sales, stock, sales_trend } = data.data;
@@ -27,19 +41,44 @@ export function DashboardView() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-teal-700 mb-1">
-            Overview / Business health
+            Management dashboard
           </p>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Your store, at a glance
+            Business overview
           </h1>
           <p className="mt-1 text-xs text-slate-600">
-            Sales, cash, and inventory from your saved transactions.
+            A clear view of sales, working capital, and inventory across your
+            business.
           </p>
         </div>
-        <button className="pos-button-secondary" onClick={refetch}>
-          <RefreshCw size={15} />
+        <button
+          aria-label="Refresh dashboard"
+          disabled={isFetching}
+          className="pos-button-secondary"
+          onClick={refetch}
+        >
+          <RefreshCw size={15} className={isFetching ? "animate-spin" : ""} />
           <span className="hidden sm:inline">Refresh</span>
         </button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {[
+          { tab: "pos-new", title: "Open checkout", icon: ShoppingBag },
+          { tab: "products", title: "Manage inventory", icon: Package },
+          { tab: "reports", title: "View reports", icon: BarChart3 },
+        ]
+          .filter((item) => allowed(item.tab))
+          .map(({ tab, title, icon: Icon }) => (
+            <button
+              key={tab}
+              className="pos-button-secondary"
+              onClick={() => onNavigate(tab)}
+            >
+              <Icon size={15} className="text-teal-700" />
+              {title}
+              <ArrowUpRight size={14} className="text-slate-400" />
+            </button>
+          ))}
       </div>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         {[
@@ -74,11 +113,11 @@ export function DashboardView() {
         ].map(({ label, value, detail, icon: Icon, primary }) => (
           <div
             key={label}
-            className={`rounded-2xl border p-4 sm:p-5 ${primary ? "bg-teal-900 border-teal-900 text-white" : "panel"}`}
+            className={`rounded-2xl border p-4 sm:p-6 ${primary ? "bg-slate-900 border-slate-900 text-white" : "panel"}`}
           >
             <div className="flex justify-between gap-2">
               <p
-                className={`text-xs font-medium ${primary ? "text-teal-100" : "text-slate-600"}`}
+                className={`text-xs font-medium ${primary ? "text-slate-300" : "text-slate-600"}`}
               >
                 {label}
               </p>
@@ -90,13 +129,13 @@ export function DashboardView() {
             <p className="mt-4 text-xl sm:text-2xl font-semibold tracking-tight tabular-nums">
               {money(value)}
               <span
-                className={`ml-1 text-[10px] font-normal ${primary ? "text-teal-100" : "text-slate-500"}`}
+                className={`ml-1 text-[10px] font-normal ${primary ? "text-slate-300" : "text-slate-500"}`}
               >
                 TK
               </span>
             </p>
             <p
-              className={`mt-2 text-[10px] ${primary ? "text-teal-100" : "text-slate-500"}`}
+              className={`mt-2 text-[10px] ${primary ? "text-slate-300" : "text-slate-500"}`}
             >
               {detail}
             </p>
@@ -109,15 +148,15 @@ export function DashboardView() {
             <div>
               <h2 className="text-sm font-semibold">Sales performance</h2>
               <p className="text-[11px] text-slate-500 mt-1">
-                Last 7 days · invoice revenue excluding prior dues
+                Last 7 days · net invoice revenue
               </p>
             </div>
             <span className="rounded-full bg-teal-50 px-3 py-1 text-[10px] font-semibold text-teal-800">
-              Live records
+              7-day trend
             </span>
           </div>
           <div
-            className="mt-8 flex h-44 items-end justify-between gap-3"
+            className="dashboard-chart mt-8 flex h-44 items-end justify-between gap-3"
             role="img"
             aria-label="Sales totals for the last seven days"
           >
@@ -172,6 +211,14 @@ export function DashboardView() {
             <span>Active products</span>
             <strong className="text-slate-900">{stock.products}</strong>
           </div>
+          {allowed("products") && (
+            <button
+              className="mt-5 flex items-center gap-2 text-xs font-semibold text-teal-700"
+              onClick={() => onNavigate("products")}
+            >
+              Review stock levels <ArrowRight size={14} />
+            </button>
+          )}
           <div className="mt-4 border-t border-slate-200 pt-4 flex justify-between text-xs">
             <span className="text-slate-600">Supplier dues</span>
             <strong className="tabular-nums">
@@ -184,9 +231,14 @@ export function DashboardView() {
         <div className="panel overflow-hidden">
           <div className="flex justify-between border-b border-slate-200 p-5">
             <h2 className="text-sm font-semibold">Recent sales</h2>
-            <span className="text-[11px] text-slate-500">
-              Latest 8 completed invoices
-            </span>
+            {allowed("sales-list") && (
+              <button
+                className="flex items-center gap-1 text-xs font-medium text-teal-700"
+                onClick={() => onNavigate("sales-list")}
+              >
+                View register <ArrowRight size={14} />
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="pos-table">

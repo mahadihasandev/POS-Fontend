@@ -43,14 +43,14 @@ export const authApi = baseApi.injectEndpoints({
     }),
     register: builder.mutation<
       { success: boolean; message: string; data: { user: User } },
-      { name: string; email: string; password: string }
+      { name: string; email: string; password: string; designation_id?: number }
     >({
       query: (userData) => ({
         url: "/auth/register",
         method: "POST",
         body: userData,
       }),
-      invalidatesTags: ["Auth", "User"],
+      invalidatesTags: ["User", "Designations"],
     }),
     logout: builder.mutation<{ success: boolean; message: string }, void>({
       query: () => ({
@@ -58,7 +58,6 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
         body: { refresh_token: getCookie("refresh_token") },
       }),
-      invalidatesTags: ["Auth", "User"],
     }),
     getMe: builder.query<{ success: boolean; data: User }, void>({
       query: () => "/auth/me",

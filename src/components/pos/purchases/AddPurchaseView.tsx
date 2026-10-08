@@ -177,7 +177,7 @@ export function AddPurchaseView({
             <ShoppingBag className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-base font-semibold text-slate-900 tracking-tight">
               Add New Purchase / Chalan Intake
             </h1>
             <p className="text-xs text-slate-500">
@@ -414,7 +414,7 @@ export function AddPurchaseView({
                           className="w-16 text-center text-xs py-1 border border-slate-300 rounded-md"
                         />
                       </td>
-                      <td className="px-3 py-2 text-right font-extrabold text-slate-800">
+                      <td className="px-3 py-2 text-right font-semibold text-slate-800">
                         ৳{(item.quantity * item.unit_cost).toLocaleString()}
                       </td>
                       <td className="px-3 py-2 text-center">
@@ -467,7 +467,7 @@ export function AddPurchaseView({
         {/* Right Column: Billing Panel (4 cols) */}
         <div className="lg:col-span-4 space-y-3">
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
               Purchase Settlement
             </h2>
 
@@ -508,10 +508,10 @@ export function AddPurchaseView({
               </div>
 
               <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                <span className="font-extrabold text-slate-800 text-sm">
+                <span className="font-semibold text-slate-800 text-sm">
                   Total Payable
                 </span>
-                <span className="font-black text-base text-teal-800">
+                <span className="font-bold text-base text-teal-800">
                   ৳{totalPayable.toLocaleString()}
                 </span>
               </div>
@@ -548,7 +548,7 @@ export function AddPurchaseView({
                         Math.max(0, parseFloat(e.target.value) || 0),
                       )
                     }
-                    className="w-28 text-right py-1 px-2 border border-slate-300 rounded-md font-black text-teal-700 text-sm"
+                    className="w-28 text-right py-1 px-2 border border-slate-300 rounded-md font-bold text-teal-700 text-sm"
                   />
                 </div>
 
@@ -556,7 +556,7 @@ export function AddPurchaseView({
                   <span className="text-slate-600 font-bold">
                     Balance Due to Supplier
                   </span>
-                  <span className="font-black text-sm text-rose-600">
+                  <span className="font-bold text-sm text-rose-600">
                     ৳{dueAmount.toLocaleString()}
                   </span>
                 </div>
@@ -566,7 +566,7 @@ export function AddPurchaseView({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50 mt-4"
+              className="w-full py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50 mt-4"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>

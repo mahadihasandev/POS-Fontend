@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useWorkspaceNavigation } from "@/lib/useWorkspaceNavigation";
+import { WorkspaceSearch } from "@/components/pos/shared/WorkspaceSearch";
 import { useGetMeQuery } from "@/redux/api/authApi";
-import { canOpenTab } from "@/lib/navigation";
+import { canOpenTab, workspacePages } from "@/lib/navigation";
 import { QueryState } from "@/components/pos/shared/QueryState";
 import { ExpensesView } from "@/components/pos/accounts/ExpensesView";
 import { WastagesView } from "@/components/pos/inventory/WastagesView";
@@ -39,7 +41,22 @@ import {
 import toast from "react-hot-toast";
 
 export default function PosApp() {
-  const [activeTab, setActiveTab] = useState<string>("pos-new");
+  const [activeTab, setActiveTab] = useWorkspaceNavigation();
+  const mainRef = useRef<HTMLElement>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [activeTab]);
+  useEffect(() => {
+    const handle = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", handle);
+    return () => window.removeEventListener("keydown", handle);
+  }, []);
   const [resumedSale, setResumedSale] = useState<SaleRecord | null>(null);
   const [currentOutlet, setCurrentOutlet] = useState<string>("");
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
@@ -95,9 +112,8 @@ export default function PosApp() {
     ? activeTab
     : can("reports.view")
       ? "dashboard"
-      : can("sales.view")
-        ? "sales-list"
-        : "products";
+      : workspacePages.find((page) => canOpenTab(page.id, permissions, isAdmin))
+          ?.id || "";
 
   if (profileLoading)
     return (
@@ -114,6 +130,24 @@ export default function PosApp() {
 
   return (
     <div className="h-dvh overflow-hidden bg-slate-100 text-slate-900 flex flex-col pos-app font-sans selection:bg-teal-600 selection:text-white">
+      <a
+        href="#workspace-content"
+        className="skip-link"
+        onClick={(event) => {
+          event.preventDefault();
+          mainRef.current?.focus();
+        }}
+      >
+        Skip to workspace
+      </a>
+      {searchOpen && (
+        <WorkspaceSearch
+          permissions={permissions}
+          isAdmin={isAdmin}
+          onSelect={navigate}
+          onClose={() => setSearchOpen(false)}
+        />
+      )}
       <div className="flex flex-1 min-h-0">
         {/* Topbar Component with Quick Action Shortcuts & Mobile Hamburger */}
         <PosSidebar
@@ -126,6 +160,8 @@ export default function PosApp() {
         />
         <div className="flex flex-1 min-w-0 flex-col">
           <PosTopbar
+            onOpenSearch={() => setSearchOpen(true)}
+            activeTab={viewTab}
             currentOutlet={outletName}
             onSelectOutlet={setCurrentOutlet}
             outlets={outlets}
@@ -139,8 +175,21 @@ export default function PosApp() {
             onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
           />
           {/* Dynamic View Router */}
-          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 lg:p-6 bg-slate-100 pb-24 lg:pb-6">
-            {bootstrapLoading ? (
+          <main
+            ref={mainRef}
+            id="workspace-content"
+            tabIndex={-1}
+            className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 lg:p-6 bg-slate-100 pb-24 lg:pb-6"
+          >
+            {!viewTab ? (
+              <div className="panel p-10 text-center">
+                <h1 className="text-xl font-semibold">Your account is ready</h1>
+                <p className="mt-3 text-sm text-slate-600">
+                  Ask your administrator to assign workspace permissions before
+                  you begin.
+                </p>
+              </div>
+            ) : bootstrapLoading ? (
               <QueryState loading />
             ) : bootstrapError ? (
               <QueryState error={bootstrapError} retry={refetch} />
@@ -290,7 +339,13 @@ export default function PosApp() {
                 )}
 
                 {/* Dashboard & Financial Accounts */}
-                {viewTab === "dashboard" && <DashboardView />}
+                {viewTab === "dashboard" && (
+                  <DashboardView
+                    onNavigate={navigate}
+                    permissions={permissions}
+                    isAdmin={isAdmin}
+                  />
+                )}
 
                 {/* Products Stock Catalog */}
                 {viewTab === "products" && (
@@ -340,7 +395,9 @@ export default function PosApp() {
                 {viewTab === "reports" && <ReportsView />}
 
                 {/* Multi-User RBAC & Designations */}
-                {viewTab === "rbac" && <DesignationManager />}
+                {viewTab === "rbac" && (
+                  <DesignationManager canManageUsers={can("users.manage")} />
+                )}
               </>
             )}
           </main>

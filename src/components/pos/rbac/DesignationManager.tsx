@@ -1,17 +1,16 @@
 "use client";
-import { errorMessage } from "@/lib/pos";
-
-import React, { useState } from "react";
-import toast from "react-hot-toast";
+import { useState } from "react";
 import {
   ShieldCheck,
-  Shield,
   Users,
   Plus,
-  Key,
   Save,
-  AlertCircle,
+  UserPlus,
+  Search,
+  Check,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import { errorMessage } from "@/lib/pos";
 import {
   useGetDesignationsQuery,
   useGetAllPermissionsQuery,
@@ -21,631 +20,497 @@ import {
   useUpdateUserDesignationMutation,
 } from "@/redux/api/rbacApi";
 import { useRegisterMutation } from "@/redux/api/authApi";
-import { Badge } from "@/components/ui/badge";
-import { UserPlus } from "lucide-react";
+import { Modal } from "../shared/Modal";
+import { QueryState } from "../shared/QueryState";
 
-export function DesignationManager() {
-  const { data: designationsData, refetch: refetchDesignations } =
-    useGetDesignationsQuery();
-  const { data: permissionsData } = useGetAllPermissionsQuery();
-  const { data: usersData, refetch: refetchUsers } = useGetUsersQuery();
-
-  const [updatePermissions, { isLoading: isUpdating }] =
+export function DesignationManager({
+  canManageUsers,
+}: {
+  canManageUsers: boolean;
+}) {
+  const roles = useGetDesignationsQuery();
+  const permissions = useGetAllPermissionsQuery();
+  const staff = useGetUsersQuery(undefined, { skip: !canManageUsers });
+  const [updatePermissions, { isLoading: saving }] =
     useUpdateDesignationPermissionsMutation();
-  const [createDesignation, { isLoading: isCreating }] =
-    useCreateDesignationMutation();
-  const [updateUserDesignation] = useUpdateUserDesignationMutation();
-  const [registerUser, { isLoading: isRegistering }] = useRegisterMutation();
-
-  const [selectedDesignationId, setSelectedDesignationId] = useState<number>(1);
-  const [customPermissionIds, setCustomPermissionIds] = useState<
-    number[] | null
-  >(null);
-
-  // New Designation Form
-  const [showNewModal, setShowNewModal] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newSlug, setNewSlug] = useState("");
-  const [newDesc, setNewDesc] = useState("");
-
-  // Internal User Registration Form (Only from inside webapp by logged in user)
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [regName, setRegName] = useState("");
-  const [regEmail, setRegEmail] = useState("");
-  const [regPassword, setRegPassword] = useState("");
-  const [regDesignationId, setRegDesignationId] = useState<number | "">("");
-
-  const designations = designationsData?.data || [];
-  const permissionsByModule = permissionsData?.data || {};
-  const users = usersData?.data || [];
-
-  const currentDesignation =
-    designations.find((d) => d.id === selectedDesignationId) || designations[0];
-
-  // Derive active permissions without calling setState inside an effect
-  const activePermissionIds =
-    customPermissionIds !== null
-      ? customPermissionIds
-      : currentDesignation?.permissions.map((p) => p.id) || [];
-
-  const handleSelectDesignation = (id: number) => {
-    setSelectedDesignationId(id);
-    setCustomPermissionIds(null); // Reset to designation's saved permissions
-  };
-
-  const handleTogglePermission = (permId: number) => {
-    if (currentDesignation?.slug === "admin") {
-      toast("Admin designation has unrestricted access to all permissions.", {
-        icon: "ℹ️",
-      });
-      return;
-    }
-
-    setCustomPermissionIds((prev) => {
-      const current =
-        prev !== null
-          ? prev
-          : currentDesignation?.permissions.map((p) => p.id) || [];
-      return current.includes(permId)
-        ? current.filter((id) => id !== permId)
-        : [...current, permId];
-    });
-  };
-
-  const handleSavePermissions = async () => {
-    if (!currentDesignation) return;
-
+  const [createRole, { isLoading: creating }] = useCreateDesignationMutation();
+  const [assignRole, { isLoading: assigning }] =
+    useUpdateUserDesignationMutation();
+  const [register, { isLoading: registering }] = useRegisterMutation();
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [draft, setDraft] = useState<number[] | null>(null);
+  const [roleOpen, setRoleOpen] = useState(false);
+  const [staffOpen, setStaffOpen] = useState(false);
+  const [roleForm, setRoleForm] = useState({
+    name: "",
+    slug: "",
+    description: "",
+  });
+  const [staffForm, setStaffForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    designation_id: "",
+  });
+  const [search, setSearch] = useState("");
+  const designations = roles.data?.data || [];
+  const current =
+    designations.find((role) => role.id === selectedId) || designations[0];
+  const selected =
+    draft ?? current?.permissions.map((permission) => permission.id) ?? [];
+  const isAdmin = current?.slug === "admin";
+  const users = (staff.data?.data || []).filter((user) =>
+    `${user.name} ${user.email}`.toLowerCase().includes(search.toLowerCase()),
+  );
+  const savePermissions = async () => {
+    if (!current || saving) return;
     try {
-      const res = await updatePermissions({
-        designationId: currentDesignation.id,
-        permission_ids: activePermissionIds,
+      await updatePermissions({
+        designationId: current.id,
+        permission_ids: selected,
       }).unwrap();
-
-      toast.success(res.message || "Permissions updated successfully!");
-      setCustomPermissionIds(null);
-      refetchDesignations();
-    } catch {
-      toast.error("Failed to update designation permissions.");
+      // Keep the local selection until the invalidated role query has caught up.
+      await roles.refetch().unwrap();
+      setDraft(null);
+      toast.success("Permissions saved.");
+    } catch (error) {
+      toast.error(errorMessage(error));
     }
   };
-
-  const handleCreateNew = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName.trim() || !newSlug.trim()) {
-      toast.error("Name and Slug are required.");
-      return;
-    }
-
+  const saveRole = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (creating) return;
     try {
-      await createDesignation({
-        name: newName,
-        slug: newSlug.toLowerCase().replace(/\s+/g, "-"),
-        description: newDesc,
+      const result = await createRole({
+        ...roleForm,
+        name: roleForm.name.trim(),
+        slug: roleForm.slug.trim().toLowerCase(),
         permission_ids: [],
       }).unwrap();
-
-      toast.success("New designation created successfully!");
-      setNewName("");
-      setNewSlug("");
-      setNewDesc("");
-      setShowNewModal(false);
-      refetchDesignations();
-    } catch {
-      toast.error("Failed to create designation.");
+      setSelectedId(result.data.id);
+      setDraft(null);
+      setRoleOpen(false);
+      setRoleForm({ name: "", slug: "", description: "" });
+      toast.success("Role created. Select its permissions to grant access.");
+    } catch (error) {
+      toast.error(errorMessage(error));
     }
   };
-
-  const handleAssignUser = async (userId: number, designationId: number) => {
+  const saveStaff = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (registering || !staffForm.designation_id) return;
     try {
-      await updateUserDesignation({
-        userId,
-        designation_id: designationId,
+      await register({
+        ...staffForm,
+        name: staffForm.name.trim(),
+        email: staffForm.email.trim(),
+        designation_id: Number(staffForm.designation_id),
       }).unwrap();
-      toast.success("User designation updated successfully!");
-      refetchUsers();
-    } catch {
-      toast.error("Failed to update user designation.");
+      setStaffOpen(false);
+      setStaffForm({ name: "", email: "", password: "", designation_id: "" });
+      toast.success("Staff account created with its assigned role.");
+    } catch (error) {
+      toast.error(errorMessage(error));
     }
   };
-
-  const handleRegisterUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) {
-      toast.error("All registration fields are required.");
-      return;
-    }
-
-    try {
-      const res = await registerUser({
-        name: regName,
-        email: regEmail,
-        password: regPassword,
-      }).unwrap();
-
-      const createdUserId = res?.data?.user?.id;
-      if (createdUserId && regDesignationId) {
-        await updateUserDesignation({
-          userId: createdUserId,
-          designation_id: Number(regDesignationId),
-        }).unwrap();
-      }
-
-      toast.success(`Staff account for ${regName} registered successfully!`);
-      setShowRegisterModal(false);
-      setRegName("");
-      setRegEmail("");
-      setRegPassword("");
-      setRegDesignationId("");
-      refetchUsers();
-    } catch (err: unknown) {
-      toast.error(errorMessage(err, "Failed to register staff account."));
-    }
-  };
-
+  if (
+    roles.isLoading ||
+    permissions.isLoading ||
+    roles.error ||
+    permissions.error
+  )
+    return (
+      <QueryState
+        loading={roles.isLoading || permissions.isLoading}
+        error={roles.error || permissions.error}
+        retry={() => {
+          void roles.refetch();
+          void permissions.refetch();
+        }}
+      />
+    );
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Top Banner */}
-      <div className="bg-white border border-slate-200 px-5 py-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-purple-50 text-purple-700 border border-purple-200">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-slate-900 tracking-wide">
-              Designations & Permission Control (RBAC)
-            </h2>
-            <p className="text-xs text-slate-600 font-medium">
-              Grant or revoke specific module permissions per employee
-              designation.
-            </p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[.18em] text-teal-700">
+            Administration / Team access
+          </p>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            Staff & permissions
+          </h1>
+          <p className="mt-1 text-xs text-slate-600">
+            Give every team member the right access to your business.
+          </p>
         </div>
-
         <button
-          type="button"
-          onClick={() => setShowNewModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-sm transition cursor-pointer self-start sm:self-auto"
+          className="pos-button-secondary"
+          onClick={() => setRoleOpen(true)}
         >
-          <Plus className="w-4 h-4" />
-          <span>+ Add Designation</span>
+          <Plus size={16} />
+          Create role
         </button>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Designations List (col 4) */}
-        <div className="lg:col-span-4 space-y-3">
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-200">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                System Designations
-              </span>
-              <span className="text-xs text-purple-700 font-mono font-bold">
-                {designations.length} Roles
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {designations.map((desig) => {
-                const isSelected = desig.id === currentDesignation?.id;
-                return (
-                  <button
-                    key={desig.id}
-                    type="button"
-                    onClick={() => handleSelectDesignation(desig.id)}
-                    className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-purple-50 border-purple-500 text-purple-950 shadow-sm"
-                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-sm text-slate-900">
-                        {desig.name}
-                      </span>
-                      <Badge
-                        variant={desig.slug === "admin" ? "rose" : "indigo"}
-                      >
-                        {desig.slug === "admin" ? "Super Admin" : "Designation"}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-slate-600 line-clamp-1">
-                      {desig.description || "Custom operational role"}
-                    </p>
-                    <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                      <span>{desig.permissions?.length || 0} Permissions</span>
-                      <span>{desig.users_count || 0} Staff assigned</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+      <div className="grid gap-5 xl:grid-cols-[300px_1fr]">
+        <section className="panel self-start p-4">
+          <div className="mb-4 flex items-center justify-between px-1">
+            <h2 className="text-sm font-semibold">Team roles</h2>
+            <span className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600">
+              {designations.length}
+            </span>
           </div>
-        </div>
-
-        {/* Right Column: Permission Matrix (col 8) */}
-        <div className="lg:col-span-8 space-y-4">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
-            {/* Designation Header & Save Button */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Key className="w-4 h-4 text-purple-700" />
-                  <h3 className="font-bold text-base text-slate-900">
-                    Permissions for:{" "}
-                    <span className="text-purple-700">
-                      {currentDesignation?.name}
-                    </span>
-                  </h3>
+          <div className="space-y-2">
+            {designations.map((role) => (
+              <button
+                key={role.id}
+                disabled={saving}
+                aria-pressed={current?.id === role.id}
+                onClick={() => {
+                  if (
+                    draft !== null &&
+                    !window.confirm("Discard unsaved permission changes?")
+                  )
+                    return;
+                  setSelectedId(role.id);
+                  setDraft(null);
+                }}
+                className={`w-full rounded-xl border p-4 text-left ${current?.id === role.id ? "border-teal-600 bg-teal-50" : "border-slate-200 hover:bg-slate-50"}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-slate-900">
+                    {role.name}
+                  </span>
+                  {current?.id === role.id && (
+                    <Check size={16} className="text-teal-700" />
+                  )}
                 </div>
-                <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                  Check or uncheck boxes below to grant or revoke specific
-                  authority.
+                <p className="mt-2 text-xs leading-5 text-slate-600">
+                  {role.description || "Custom team role"}
+                </p>
+                <p className="mt-3 text-[11px] text-slate-500">
+                  {role.slug === "admin"
+                    ? "Full access"
+                    : `${role.permissions.length} permissions`}{" "}
+                  · {role.users_count || 0} staff
+                </p>
+              </button>
+            ))}
+          </div>
+          {!designations.length && (
+            <p className="py-8 text-center text-sm text-slate-500">
+              Create a role to get started.
+            </p>
+          )}
+        </section>
+        <section className="panel overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+            <div>
+              <h2 className="text-base font-semibold">
+                {current?.name || "Role"} permissions
+              </h2>
+              <p className="mt-1 text-xs text-slate-500">
+                {isAdmin
+                  ? "Administrators have access to all workspace features."
+                  : "Select the actions this role can perform."}
+              </p>
+            </div>
+            <button
+              disabled={!current || isAdmin || saving || draft === null}
+              className="pos-button"
+              onClick={savePermissions}
+            >
+              <Save size={15} />
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+          {isAdmin && (
+            <div className="mx-5 mt-5 flex gap-3 rounded-lg border border-teal-200 bg-teal-50 p-3 text-xs leading-5 text-teal-900">
+              <ShieldCheck size={18} className="shrink-0" />
+              Admin access is built in. Choose another role to customize
+              permissions.
+            </div>
+          )}
+          <div className="space-y-6 p-5">
+            {Object.entries(permissions.data?.data || {}).map(
+              ([module, items]) => (
+                <fieldset key={module} disabled={isAdmin || saving || !current}>
+                  <legend className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    {module}
+                  </legend>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {items.map((permission) => (
+                      <label
+                        key={permission.id}
+                        className={`flex items-start gap-3 rounded-lg border p-3 ${isAdmin || selected.includes(permission.id) ? "border-teal-200 bg-teal-50/40" : "border-slate-200"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-0.5 size-4 shrink-0 accent-teal-700"
+                          checked={isAdmin || selected.includes(permission.id)}
+                          onChange={() =>
+                            setDraft(
+                              selected.includes(permission.id)
+                                ? selected.filter((id) => id !== permission.id)
+                                : [...selected, permission.id],
+                            )
+                          }
+                        />
+                        <span>
+                          <span className="block text-xs font-medium text-slate-900">
+                            {permission.name}
+                          </span>
+                          {permission.description && (
+                            <span className="mt-1 block text-[11px] leading-5 text-slate-500">
+                              {permission.description}
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ),
+            )}
+          </div>
+        </section>
+      </div>
+      {canManageUsers && (
+        <section className="panel overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
+            <div className="flex items-center gap-3">
+              <Users size={20} className="text-teal-700" />
+              <div>
+                <h2 className="text-sm font-semibold">Team members</h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Manage staff accounts and assigned roles.
                 </p>
               </div>
-
-              <button
-                type="button"
-                disabled={isUpdating || currentDesignation?.slug === "admin"}
-                onClick={handleSavePermissions}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs shadow-sm transition cursor-pointer"
-              >
-                <Save className="w-4 h-4" />
-                <span>{isUpdating ? "Saving..." : "Save Permissions"}</span>
-              </button>
             </div>
-
-            {currentDesignation?.slug === "admin" && (
-              <div className="p-3 rounded-lg bg-purple-50 border border-purple-200 text-xs text-purple-900 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-purple-700 shrink-0" />
-                <span>
-                  The <strong>Admin</strong> designation possesses full,
-                  unrevokable root authority over all application subsystems.
-                </span>
-              </div>
-            )}
-
-            {/* Permissions Grouped by Module */}
-            <div className="space-y-4">
-              {Object.entries(permissionsByModule).map(
-                ([moduleName, perms]) => (
-                  <div
-                    key={moduleName}
-                    className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2.5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs text-purple-800 uppercase tracking-wider">
-                        Module: {moduleName}
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-medium">
-                        {perms.length} features
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {perms.map((perm) => {
-                        const isChecked =
-                          currentDesignation?.slug === "admin" ||
-                          activePermissionIds.includes(perm.id);
-
-                        return (
-                          <label
-                            key={perm.id}
-                            className={`flex items-start gap-2.5 p-2.5 rounded-lg border transition-all cursor-pointer ${
-                              isChecked
-                                ? "bg-white border-purple-500 text-slate-900 shadow-sm"
-                                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              disabled={currentDesignation?.slug === "admin"}
-                              onChange={() => handleTogglePermission(perm.id)}
-                              className="accent-purple-600 w-4 h-4 mt-0.5"
-                            />
-                            <div>
-                              <span className="font-bold text-xs block text-slate-900">
-                                {perm.name}
-                              </span>
-                              <span className="text-[10px] text-purple-700 block font-mono font-semibold">
-                                {perm.slug}
-                              </span>
-                              {perm.description && (
-                                <span className="text-[11px] text-slate-600 block mt-0.5">
-                                  {perm.description}
-                                </span>
-                              )}
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ),
-              )}
-            </div>
+            <button className="pos-button" onClick={() => setStaffOpen(true)}>
+              <UserPlus size={16} />
+              Add staff member
+            </button>
           </div>
-
-          {/* User Staff Assignment Table */}
-          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-teal-700" />
-                <h3 className="font-bold text-sm text-slate-900">
-                  Staff Designation Assignments
-                </h3>
+          {staff.isLoading || staff.error ? (
+            <QueryState
+              loading={staff.isLoading}
+              error={staff.error}
+              retry={staff.refetch}
+            />
+          ) : (
+            <>
+              <div className="relative m-4 max-w-sm">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-3 text-slate-500"
+                />
+                <input
+                  aria-label="Search staff"
+                  placeholder="Search name or email"
+                  className="pos-field !pl-9"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
               </div>
-              <button
-                type="button"
-                onClick={() => setShowRegisterModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>+ Register New Staff User</span>
-              </button>
-            </div>
-            <p className="text-xs text-slate-600 font-medium">
-              Register new staff accounts and assign roles. Registration can
-              only be performed from inside this webapp by an authenticated
-              administrator.
-            </p>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] border-b border-slate-200">
-                  <tr>
-                    <th className="py-2.5 px-3">Staff Name</th>
-                    <th className="py-2.5 px-3">Email</th>
-                    <th className="py-2.5 px-3">Current Designation</th>
-                    <th className="py-2.5 px-3 text-center">Change Role</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {users.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50 transition">
-                      <td className="py-2 px-3 font-bold text-slate-900">
-                        {u.name}
-                      </td>
-                      <td className="py-2 px-3 font-mono text-slate-600">
-                        {u.email}
-                      </td>
-                      <td className="py-2 px-3">
-                        <Badge
-                          variant={
-                            u.designation?.slug === "admin" ? "rose" : "indigo"
-                          }
-                        >
-                          {u.designation?.name || "Unassigned"}
-                        </Badge>
-                      </td>
-                      <td className="py-2 px-3 text-center">
-                        <select
-                          value={u.designation_id ?? ""}
-                          onChange={(e) =>
-                            handleAssignUser(u.id, Number(e.target.value))
-                          }
-                          className="h-7 px-2 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-purple-600"
-                        >
-                          {designations.map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="pos-table">
+                  <thead>
+                    <tr>
+                      <th>Team member</th>
+                      <th>Email address</th>
+                      <th>Assigned role</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Add New Designation Modal */}
-      {showNewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <form
-            onSubmit={handleCreateNew}
-            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-purple-700" />
-                <h3 className="font-bold text-base text-slate-900">
-                  Create Designation
-                </h3>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => (
+                      <tr key={user.id}>
+                        <td className="font-medium whitespace-nowrap">
+                          {user.name}
+                        </td>
+                        <td>{user.email}</td>
+                        <td>
+                          <select
+                            aria-label={`Role for ${user.name}`}
+                            className="pos-field min-w-40"
+                            disabled={assigning}
+                            value={user.designation_id ?? ""}
+                            onChange={async (event) => {
+                              try {
+                                await assignRole({
+                                  userId: user.id,
+                                  designation_id: Number(event.target.value),
+                                }).unwrap();
+                                toast.success("Staff role updated.");
+                              } catch (error) {
+                                toast.error(errorMessage(error));
+                              }
+                            }}
+                          >
+                            <option value="" disabled>
+                              Unassigned
+                            </option>
+                            {designations.map((role) => (
+                              <option key={role.id} value={role.id}>
+                                {role.name}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                    {!users.length && (
+                      <tr>
+                        <td colSpan={3} className="text-center">
+                          No matching team members.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowNewModal(false)}
-                className="text-slate-400 hover:text-slate-600 cursor-pointer font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-800 font-semibold mb-1">
-                  Designation Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Senior Cashier"
-                  value={newName}
-                  onChange={(e) => {
-                    setNewName(e.target.value);
-                    if (!newSlug) {
-                      setNewSlug(
-                        e.target.value.toLowerCase().replace(/\s+/g, "-"),
-                      );
-                    }
-                  }}
-                  className="w-full h-9 px-3 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-800 font-semibold mb-1">
-                  Unique Slug Identifier *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="senior-cashier"
-                  value={newSlug}
-                  onChange={(e) => setNewSlug(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-800 font-semibold mb-1">
-                  Description
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Responsibilities and access scope..."
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-purple-600"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => setShowNewModal(false)}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isCreating}
-                className="px-5 py-2 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm cursor-pointer"
-              >
-                {isCreating ? "Creating..." : "Save Designation"}
-              </button>
-            </div>
-          </form>
-        </div>
+            </>
+          )}
+        </section>
       )}
-      {/* Register New Staff Member Modal (Internal Registration Only) */}
-      {showRegisterModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <form
-            onSubmit={handleRegisterUser}
-            className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl p-6 space-y-4"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-teal-600" />
-                <div>
-                  <h3 className="font-bold text-base text-slate-900">
-                    Register Staff Account
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Internal authorization and staff account creation
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowRegisterModal(false)}
-                className="text-slate-400 hover:text-slate-600 cursor-pointer font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-800 font-semibold mb-1">
-                  Full Staff Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Tanvir Ahmed"
-                  value={regName}
-                  onChange={(e) => setRegName(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-teal-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-800 font-semibold mb-1">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="tanvir@smartpos.com"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-teal-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-800 font-semibold mb-1">
-                  Temporary Password *
-                </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Minimum 8 characters"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  className="w-full h-9 px-3 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-teal-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-800 font-semibold mb-1">
-                  Assigned Designation / Role
-                </label>
-                <select
-                  value={regDesignationId}
-                  onChange={(e) =>
-                    setRegDesignationId(
-                      e.target.value ? Number(e.target.value) : "",
-                    )
-                  }
-                  className="w-full h-9 px-3 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-semibold focus:bg-white focus:outline-none focus:border-teal-600"
-                >
-                  <option value="">-- Choose Designation --</option>
-                  {designations.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} ({d.slug})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
-              <button
-                type="button"
-                onClick={() => setShowRegisterModal(false)}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isRegistering}
-                className="px-5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition cursor-pointer disabled:opacity-50"
-              >
-                {isRegistering ? "Registering..." : "Create Account"}
-              </button>
-            </div>
+      {roleOpen && (
+        <Modal
+          title="Create team role"
+          onClose={() => {
+            if (!creating) setRoleOpen(false);
+          }}
+        >
+          <form className="space-y-4" onSubmit={saveRole}>
+            <label className="block">
+              <span className="pos-label">Role name</span>
+              <input
+                autoFocus
+                required
+                maxLength={100}
+                className="pos-field"
+                value={roleForm.name}
+                onChange={(event) =>
+                  setRoleForm({
+                    ...roleForm,
+                    name: event.target.value,
+                    slug: event.target.value
+                      .toLowerCase()
+                      .trim()
+                      .replace(/[^a-z0-9]+/g, "-"),
+                  })
+                }
+                placeholder="e.g. Store supervisor"
+              />
+            </label>
+            <label className="block">
+              <span className="pos-label">Role identifier</span>
+              <input
+                required
+                pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                maxLength={100}
+                className="pos-field"
+                value={roleForm.slug}
+                onChange={(event) =>
+                  setRoleForm({ ...roleForm, slug: event.target.value })
+                }
+              />
+            </label>
+            <label className="block">
+              <span className="pos-label">Description</span>
+              <textarea
+                className="pos-field"
+                rows={3}
+                value={roleForm.description}
+                onChange={(event) =>
+                  setRoleForm({ ...roleForm, description: event.target.value })
+                }
+              />
+            </label>
+            <button disabled={creating} className="pos-button w-full">
+              {creating ? "Creating…" : "Create role"}
+            </button>
           </form>
-        </div>
+        </Modal>
+      )}
+      {staffOpen && (
+        <Modal
+          title="Add staff member"
+          onClose={() => {
+            if (!registering) setStaffOpen(false);
+          }}
+        >
+          <form className="space-y-4" onSubmit={saveStaff}>
+            <label className="block">
+              <span className="pos-label">Full name</span>
+              <input
+                autoFocus
+                required
+                maxLength={120}
+                className="pos-field"
+                autoComplete="name"
+                value={staffForm.name}
+                onChange={(event) =>
+                  setStaffForm({ ...staffForm, name: event.target.value })
+                }
+              />
+            </label>
+            <label className="block">
+              <span className="pos-label">Email address</span>
+              <input
+                type="email"
+                required
+                maxLength={255}
+                autoComplete="email"
+                className="pos-field"
+                value={staffForm.email}
+                onChange={(event) =>
+                  setStaffForm({ ...staffForm, email: event.target.value })
+                }
+              />
+            </label>
+            <label className="block">
+              <span className="pos-label">Password</span>
+              <input
+                type="password"
+                required
+                minLength={8}
+                pattern="(?=.*[A-Za-z])(?=.*[0-9]).{8,}"
+                autoComplete="new-password"
+                className="pos-field"
+                value={staffForm.password}
+                onChange={(event) =>
+                  setStaffForm({ ...staffForm, password: event.target.value })
+                }
+              />
+              <span className="mt-1 block text-xs text-slate-500">
+                At least 8 characters, including a letter and a number.
+              </span>
+            </label>
+            <label className="block">
+              <span className="pos-label">Assigned role</span>
+              <select
+                required
+                className="pos-field"
+                value={staffForm.designation_id}
+                onChange={(event) =>
+                  setStaffForm({
+                    ...staffForm,
+                    designation_id: event.target.value,
+                  })
+                }
+              >
+                <option value="">Choose a role</option>
+                {designations.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button disabled={registering} className="pos-button w-full">
+              {registering ? "Creating…" : "Create staff account"}
+            </button>
+          </form>
+        </Modal>
       )}
     </div>
   );

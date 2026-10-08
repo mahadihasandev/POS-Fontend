@@ -77,7 +77,7 @@ export function SuppliersView({
             <Building2 className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-base font-semibold text-slate-900 tracking-tight">
               Suppliers Directory & Vendor Management
             </h1>
             <p className="text-xs text-slate-500 font-medium">
@@ -105,7 +105,7 @@ export function SuppliersView({
             onClick={() => setActiveTab("dues")}
             className={`px-3 py-1.5 rounded-md transition ${
               activeTab === "dues"
-                ? "bg-white text-violet-700 shadow-xs"
+                ? "bg-white text-teal-700 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -191,7 +191,7 @@ export function SuppliersView({
                         <button
                           type="button"
                           onClick={onNavigateToSupplierPayment}
-                          className="px-2.5 py-1 rounded-md bg-violet-50 hover:bg-violet-100 text-violet-800 border border-violet-200 text-[11px] font-bold transition shadow-xs cursor-pointer"
+                          className="px-2.5 py-1 rounded-md bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-[11px] font-bold transition shadow-xs cursor-pointer"
                         >
                           Payment
                         </button>
@@ -208,11 +208,11 @@ export function SuppliersView({
       {/* Tab 2: Supplier Due List (Screenshot 11.01.19 AM) */}
       {activeTab === "dues" && (
         <div className="space-y-3">
-          <div className="bg-violet-50 border border-violet-200 p-3 rounded-xl flex justify-between items-center text-xs">
-            <span className="font-bold text-violet-900">
+          <div className="bg-teal-50 border border-teal-200 p-3 rounded-xl flex justify-between items-center text-xs">
+            <span className="font-bold text-teal-900">
               Vendors with Outstanding Balances
             </span>
-            <span className="font-black text-sm text-violet-800">
+            <span className="font-bold text-sm text-teal-800">
               Total Payable Dues: ৳6,940,202.30
             </span>
           </div>
@@ -230,7 +230,7 @@ export function SuppliersView({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {suppliers.map((s) => (
-                  <tr key={s.id} className="hover:bg-violet-50/40">
+                  <tr key={s.id} className="hover:bg-teal-50/40">
                     <td className="py-2.5 px-3.5 font-bold text-slate-900">
                       {s.name}
                     </td>
@@ -240,14 +240,14 @@ export function SuppliersView({
                     <td className="py-2.5 px-3.5 font-mono text-slate-600">
                       {s.phone || "—"}
                     </td>
-                    <td className="py-2.5 px-3.5 text-right font-black text-rose-600 text-sm">
+                    <td className="py-2.5 px-3.5 text-right font-bold text-rose-600 text-sm">
                       ৳{Number(s.previous_due || 0).toLocaleString()}
                     </td>
                     <td className="py-2.5 px-3.5 text-center">
                       <button
                         type="button"
                         onClick={onNavigateToSupplierPayment}
-                        className="px-3 py-1 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-bold transition shadow-xs cursor-pointer"
+                        className="px-3 py-1 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold transition shadow-xs cursor-pointer"
                       >
                         Pay Now
                       </button>
@@ -266,7 +266,7 @@ export function SuppliersView({
           onSubmit={handleAddSupplier}
           className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4 max-w-xl"
         >
-          <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
             Register New Supplier / Vendor
           </h2>
 
@@ -321,7 +321,7 @@ export function SuppliersView({
             <button
               type="submit"
               disabled={isCreating}
-              className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold transition shadow-xs"
+              className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition shadow-xs"
             >
               {isCreating ? "Saving..." : "Save Supplier"}
             </button>
@@ -333,7 +333,7 @@ export function SuppliersView({
       {activeTab === "upload" && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs max-w-xl space-y-4">
           <div>
-            <h2 className="text-sm font-extrabold text-slate-900">
+            <h2 className="text-sm font-semibold text-slate-900">
               Bulk Supplier CSV Import
             </h2>
             <p className="text-xs text-slate-500">

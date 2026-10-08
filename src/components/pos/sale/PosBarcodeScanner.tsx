@@ -35,7 +35,7 @@ export function PosBarcodeScanner({
     <div className="bg-white border-x border-b border-slate-200 p-2 sm:p-3 shadow-xs">
       <div className="flex items-center rounded-lg border-2 border-teal-600 bg-teal-50/20 shadow-xs overflow-hidden focus-within:border-teal-700 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all">
         {/* Left Barcode Icon / Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-2 bg-teal-700 text-white font-extrabold text-xs shrink-0 select-none">
+        <div className="flex items-center gap-1.5 px-3 py-2 bg-teal-700 text-white font-semibold text-xs shrink-0 select-none">
           <Barcode className="w-4 h-4" />
           <span className="hidden sm:inline">Barcode</span>
           <span className="font-mono text-teal-100">[F2]</span>
@@ -55,7 +55,7 @@ export function PosBarcodeScanner({
         {/* Rapid Scan indicator */}
         <div className="pr-3 flex items-center gap-1.5 text-xs text-slate-600 shrink-0">
           {hasScanned ? (
-            <span className="text-emerald-700 font-extrabold flex items-center gap-1 animate-pulse">
+            <span className="text-emerald-700 font-semibold flex items-center gap-1 animate-pulse">
               <Zap className="w-3.5 h-3.5 fill-current" />
               Scanned!
             </span>

@@ -28,3 +28,28 @@ export function canOpenTab(tab: string, permissions: string[], admin: boolean) {
     (admin || permissions.includes(tabPermissions[tab]))
   );
 }
+
+export const workspacePages = [
+  { id: "dashboard", label: "Business overview", group: "Overview" },
+  { id: "pos-new", label: "New sale", group: "Sales" },
+  { id: "pos-supplier", label: "Supplier sale", group: "Sales" },
+  { id: "sales-list", label: "Sales register", group: "Sales" },
+  { id: "collection", label: "Due collection", group: "Sales" },
+  { id: "collection-supplier", label: "Supplier collection", group: "Sales" },
+  { id: "sales-return", label: "Return & exchange", group: "Sales" },
+  { id: "sales-exchange-list", label: "Return history", group: "Sales" },
+  { id: "purchase-new", label: "Add purchase", group: "Purchasing" },
+  { id: "purchase-list", label: "Purchase register", group: "Purchasing" },
+  { id: "purchase-payment", label: "Supplier payments", group: "Purchasing" },
+  { id: "purchase-return", label: "Purchase returns", group: "Purchasing" },
+  { id: "products", label: "Products & stock", group: "Inventory" },
+  { id: "transfers", label: "Stock transfers", group: "Inventory" },
+  { id: "wastages", label: "Wastage & losses", group: "Inventory" },
+  { id: "customers", label: "Customers", group: "People" },
+  { id: "suppliers", label: "Suppliers", group: "People" },
+  { id: "marketers", label: "Marketers & commissions", group: "People" },
+  { id: "accounts", label: "Accounts & transfers", group: "Finance" },
+  { id: "expenses", label: "Expense vouchers", group: "Finance" },
+  { id: "reports", label: "Reports & audit", group: "Finance" },
+  { id: "rbac", label: "Staff & permissions", group: "Administration" },
+];
