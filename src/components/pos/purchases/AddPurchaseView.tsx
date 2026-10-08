@@ -1,18 +1,16 @@
 "use client";
+import { errorMessage } from "@/lib/pos";
+import { localDate } from "@/lib/pos";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   ShoppingBag,
   Barcode,
-  Search,
-  Plus,
   Trash2,
   CheckCircle2,
   Calendar,
   Building2,
   Warehouse,
-  DollarSign,
-  Clock,
 } from "lucide-react";
 import {
   Supplier,
@@ -48,17 +46,15 @@ export function AddPurchaseView({
   onNavigateToList,
 }: AddPurchaseViewProps) {
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(
-    suppliers.length > 0 ? suppliers[0].id : null
+    suppliers.length > 0 ? suppliers[0].id : null,
   );
   const [selectedOutletId, setSelectedOutletId] = useState<number | null>(
-    outlets.length > 0 ? outlets[0].id : null
+    outlets.length > 0 ? outlets[0].id : null,
   );
   const [chalanNo, setChalanNo] = useState(
-    `CH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+    () => `CH-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
   );
-  const [purchaseDate, setPurchaseDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [purchaseDate, setPurchaseDate] = useState(localDate());
   const [barcodeSearch, setBarcodeSearch] = useState("");
   const [note, setNote] = useState("");
 
@@ -79,7 +75,7 @@ export function AddPurchaseView({
   const [tax, setTax] = useState<number>(0);
   const [paidAmount, setPaidAmount] = useState<number>(100000);
   const [paymentAccount, setPaymentAccount] = useState<string>(
-    accounts[0]?.name || "Cash"
+    accounts[0]?.name || "Cash",
   );
 
   const [createPurchase, { isLoading: isSubmitting }] =
@@ -88,7 +84,7 @@ export function AddPurchaseView({
   // Calculations
   const subtotal = cart.reduce(
     (sum, item) => sum + item.quantity * item.unit_cost,
-    0
+    0,
   );
   const totalPayable = Math.max(0, subtotal - discount + tax);
   const dueAmount = Math.max(0, totalPayable - paidAmount);
@@ -99,8 +95,8 @@ export function AddPurchaseView({
     if (existing) {
       setCart(
         cart.map((i) =>
-          i.product_id === prod.id ? { ...i, quantity: i.quantity + 1 } : i
-        )
+          i.product_id === prod.id ? { ...i, quantity: i.quantity + 1 } : i,
+        ),
       );
     } else {
       setCart([
@@ -124,7 +120,7 @@ export function AddPurchaseView({
     const match = products.find(
       (p) =>
         p.barcode.toLowerCase() === barcodeSearch.trim().toLowerCase() ||
-        p.code.toLowerCase() === barcodeSearch.trim().toLowerCase()
+        p.code.toLowerCase() === barcodeSearch.trim().toLowerCase(),
     );
     if (match) {
       handleAddProduct(match);
@@ -167,8 +163,8 @@ export function AddPurchaseView({
 
       toast.success("Purchase order and stock levels updated successfully!");
       onNavigateToList();
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to save purchase.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to save purchase."));
     }
   };
 
@@ -185,7 +181,8 @@ export function AddPurchaseView({
               Add New Purchase / Chalan Intake
             </h1>
             <p className="text-xs text-slate-500">
-              Receive inventory from suppliers, record chalan batches, update purchase costs and payables
+              Receive inventory from suppliers, record chalan batches, update
+              purchase costs and payables
             </p>
           </div>
         </div>
@@ -199,7 +196,10 @@ export function AddPurchaseView({
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 lg:grid-cols-12 gap-4"
+      >
         {/* Left Column: Form & Item Cart (8 cols) */}
         <div className="lg:col-span-8 space-y-4">
           {/* Metadata Cards */}
@@ -212,7 +212,9 @@ export function AddPurchaseView({
                 <Building2 className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
                 <select
                   value={selectedSupplierId || ""}
-                  onChange={(e) => setSelectedSupplierId(Number(e.target.value))}
+                  onChange={(e) =>
+                    setSelectedSupplierId(Number(e.target.value))
+                  }
                   className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-teal-500 focus:outline-hidden"
                 >
                   {suppliers.map((s) => (
@@ -321,18 +323,28 @@ export function AddPurchaseView({
                     <th className="px-3 py-2.5">Barcode</th>
                     <th className="px-3 py-2.5 min-w-[200px]">Product Name</th>
                     <th className="px-3 py-2.5 w-20 text-center">Qty</th>
-                    <th className="px-3 py-2.5 w-24 text-right">Cost Price (৳)</th>
+                    <th className="px-3 py-2.5 w-24 text-right">
+                      Cost Price (৳)
+                    </th>
                     <th className="px-3 py-2.5 w-20 text-center">Free Qty</th>
-                    <th className="px-3 py-2.5 w-28 text-right">Subtotal (৳)</th>
+                    <th className="px-3 py-2.5 w-28 text-right">
+                      Subtotal (৳)
+                    </th>
                     <th className="px-3 py-2.5 w-12 text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {cart.map((item, idx) => (
                     <tr key={item.product_id} className="hover:bg-slate-50/70">
-                      <td className="px-3 py-2 text-slate-400 font-semibold">{idx + 1}</td>
-                      <td className="px-3 py-2 font-mono text-slate-500">{item.barcode}</td>
-                      <td className="px-3 py-2 font-medium text-slate-900">{item.product_name}</td>
+                      <td className="px-3 py-2 text-slate-400 font-semibold">
+                        {idx + 1}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-slate-500">
+                        {item.barcode}
+                      </td>
+                      <td className="px-3 py-2 font-medium text-slate-900">
+                        {item.product_name}
+                      </td>
                       <td className="px-3 py-2 text-center">
                         <input
                           type="number"
@@ -342,9 +354,15 @@ export function AddPurchaseView({
                             setCart(
                               cart.map((c) =>
                                 c.product_id === item.product_id
-                                  ? { ...c, quantity: Math.max(1, parseInt(e.target.value) || 1) }
-                                  : c
-                              )
+                                  ? {
+                                      ...c,
+                                      quantity: Math.max(
+                                        1,
+                                        parseInt(e.target.value) || 1,
+                                      ),
+                                    }
+                                  : c,
+                              ),
                             )
                           }
                           className="w-16 text-center text-xs py-1 border border-slate-300 rounded-md font-bold"
@@ -359,9 +377,15 @@ export function AddPurchaseView({
                             setCart(
                               cart.map((c) =>
                                 c.product_id === item.product_id
-                                  ? { ...c, unit_cost: Math.max(0, parseFloat(e.target.value) || 0) }
-                                  : c
-                              )
+                                  ? {
+                                      ...c,
+                                      unit_cost: Math.max(
+                                        0,
+                                        parseFloat(e.target.value) || 0,
+                                      ),
+                                    }
+                                  : c,
+                              ),
                             )
                           }
                           className="w-24 text-right text-xs py-1 px-2 border border-slate-300 rounded-md font-bold"
@@ -376,9 +400,15 @@ export function AddPurchaseView({
                             setCart(
                               cart.map((c) =>
                                 c.product_id === item.product_id
-                                  ? { ...c, free_qty: Math.max(0, parseInt(e.target.value) || 0) }
-                                  : c
-                              )
+                                  ? {
+                                      ...c,
+                                      free_qty: Math.max(
+                                        0,
+                                        parseInt(e.target.value) || 0,
+                                      ),
+                                    }
+                                  : c,
+                              ),
                             )
                           }
                           className="w-16 text-center text-xs py-1 border border-slate-300 rounded-md"
@@ -391,7 +421,11 @@ export function AddPurchaseView({
                         <button
                           type="button"
                           onClick={() =>
-                            setCart(cart.filter((c) => c.product_id !== item.product_id))
+                            setCart(
+                              cart.filter(
+                                (c) => c.product_id !== item.product_id,
+                              ),
+                            )
                           }
                           className="text-slate-400 hover:text-rose-600 transition"
                         >
@@ -406,8 +440,16 @@ export function AddPurchaseView({
 
             <div className="bg-slate-50 px-4 py-2 border-t border-slate-200 flex justify-end gap-3 text-xs font-bold text-slate-700">
               <span>Cart Items: {cart.length}</span>
-              <span>Total Units: {cart.reduce((s, i) => s + i.quantity + i.free_qty, 0)}</span>
-              <span>Subtotal: <strong className="text-teal-700">৳{subtotal.toLocaleString()}</strong></span>
+              <span>
+                Total Units:{" "}
+                {cart.reduce((s, i) => s + i.quantity + i.free_qty, 0)}
+              </span>
+              <span>
+                Subtotal:{" "}
+                <strong className="text-teal-700">
+                  ৳{subtotal.toLocaleString()}
+                </strong>
+              </span>
             </div>
           </div>
 
@@ -432,7 +474,9 @@ export function AddPurchaseView({
             <div className="space-y-2 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-slate-600">Subtotal (Items)</span>
-                <span className="font-bold text-slate-800">৳{subtotal.toLocaleString()}</span>
+                <span className="font-bold text-slate-800">
+                  ৳{subtotal.toLocaleString()}
+                </span>
               </div>
 
               <div className="flex justify-between items-center">
@@ -442,7 +486,9 @@ export function AddPurchaseView({
                   min="0"
                   step="0.01"
                   value={discount}
-                  onChange={(e) => setDiscount(Math.max(0, parseFloat(e.target.value) || 0))}
+                  onChange={(e) =>
+                    setDiscount(Math.max(0, parseFloat(e.target.value) || 0))
+                  }
                   className="w-28 text-right py-1 px-2 border border-slate-300 rounded-md font-bold text-emerald-600"
                 />
               </div>
@@ -454,13 +500,17 @@ export function AddPurchaseView({
                   min="0"
                   step="0.01"
                   value={tax}
-                  onChange={(e) => setTax(Math.max(0, parseFloat(e.target.value) || 0))}
+                  onChange={(e) =>
+                    setTax(Math.max(0, parseFloat(e.target.value) || 0))
+                  }
                   className="w-28 text-right py-1 px-2 border border-slate-300 rounded-md font-bold text-slate-800"
                 />
               </div>
 
               <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                <span className="font-extrabold text-slate-800 text-sm">Total Payable</span>
+                <span className="font-extrabold text-slate-800 text-sm">
+                  Total Payable
+                </span>
                 <span className="font-black text-base text-teal-800">
                   ৳{totalPayable.toLocaleString()}
                 </span>
@@ -485,19 +535,27 @@ export function AddPurchaseView({
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-700 font-bold">Given / Paid Amount</span>
+                  <span className="text-slate-700 font-bold">
+                    Given / Paid Amount
+                  </span>
                   <input
                     type="number"
                     min="0"
                     step="0.01"
                     value={paidAmount}
-                    onChange={(e) => setPaidAmount(Math.max(0, parseFloat(e.target.value) || 0))}
+                    onChange={(e) =>
+                      setPaidAmount(
+                        Math.max(0, parseFloat(e.target.value) || 0),
+                      )
+                    }
                     className="w-28 text-right py-1 px-2 border border-slate-300 rounded-md font-black text-teal-700 text-sm"
                   />
                 </div>
 
                 <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-600 font-bold">Balance Due to Supplier</span>
+                  <span className="text-slate-600 font-bold">
+                    Balance Due to Supplier
+                  </span>
                   <span className="font-black text-sm text-rose-600">
                     ৳{dueAmount.toLocaleString()}
                   </span>
@@ -511,7 +569,9 @@ export function AddPurchaseView({
               className="w-full py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50 mt-4"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{isSubmitting ? "Processing..." : "Complete Purchase [F10]"}</span>
+              <span>
+                {isSubmitting ? "Processing..." : "Complete Purchase [F10]"}
+              </span>
             </button>
           </div>
         </div>

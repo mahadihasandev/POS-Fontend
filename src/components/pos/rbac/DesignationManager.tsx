@@ -1,4 +1,5 @@
 "use client";
+import { errorMessage } from "@/lib/pos";
 
 import React, { useState } from "react";
 import toast from "react-hot-toast";
@@ -24,17 +25,22 @@ import { Badge } from "@/components/ui/badge";
 import { UserPlus } from "lucide-react";
 
 export function DesignationManager() {
-  const { data: designationsData, refetch: refetchDesignations } = useGetDesignationsQuery();
+  const { data: designationsData, refetch: refetchDesignations } =
+    useGetDesignationsQuery();
   const { data: permissionsData } = useGetAllPermissionsQuery();
   const { data: usersData, refetch: refetchUsers } = useGetUsersQuery();
 
-  const [updatePermissions, { isLoading: isUpdating }] = useUpdateDesignationPermissionsMutation();
-  const [createDesignation, { isLoading: isCreating }] = useCreateDesignationMutation();
+  const [updatePermissions, { isLoading: isUpdating }] =
+    useUpdateDesignationPermissionsMutation();
+  const [createDesignation, { isLoading: isCreating }] =
+    useCreateDesignationMutation();
   const [updateUserDesignation] = useUpdateUserDesignationMutation();
   const [registerUser, { isLoading: isRegistering }] = useRegisterMutation();
 
   const [selectedDesignationId, setSelectedDesignationId] = useState<number>(1);
-  const [customPermissionIds, setCustomPermissionIds] = useState<number[] | null>(null);
+  const [customPermissionIds, setCustomPermissionIds] = useState<
+    number[] | null
+  >(null);
 
   // New Designation Form
   const [showNewModal, setShowNewModal] = useState(false);
@@ -53,7 +59,8 @@ export function DesignationManager() {
   const permissionsByModule = permissionsData?.data || {};
   const users = usersData?.data || [];
 
-  const currentDesignation = designations.find((d) => d.id === selectedDesignationId) || designations[0];
+  const currentDesignation =
+    designations.find((d) => d.id === selectedDesignationId) || designations[0];
 
   // Derive active permissions without calling setState inside an effect
   const activePermissionIds =
@@ -75,7 +82,10 @@ export function DesignationManager() {
     }
 
     setCustomPermissionIds((prev) => {
-      const current = prev !== null ? prev : currentDesignation?.permissions.map((p) => p.id) || [];
+      const current =
+        prev !== null
+          ? prev
+          : currentDesignation?.permissions.map((p) => p.id) || [];
       return current.includes(permId)
         ? current.filter((id) => id !== permId)
         : [...current, permId];
@@ -127,7 +137,10 @@ export function DesignationManager() {
 
   const handleAssignUser = async (userId: number, designationId: number) => {
     try {
-      await updateUserDesignation({ userId, designation_id: designationId }).unwrap();
+      await updateUserDesignation({
+        userId,
+        designation_id: designationId,
+      }).unwrap();
       toast.success("User designation updated successfully!");
       refetchUsers();
     } catch {
@@ -164,8 +177,8 @@ export function DesignationManager() {
       setRegPassword("");
       setRegDesignationId("");
       refetchUsers();
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to register staff account.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to register staff account."));
     }
   };
 
@@ -182,7 +195,8 @@ export function DesignationManager() {
               Designations & Permission Control (RBAC)
             </h2>
             <p className="text-xs text-slate-600 font-medium">
-              Grant or revoke specific module permissions per employee designation.
+              Grant or revoke specific module permissions per employee
+              designation.
             </p>
           </div>
         </div>
@@ -225,8 +239,12 @@ export function DesignationManager() {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-sm text-slate-900">{desig.name}</span>
-                      <Badge variant={desig.slug === "admin" ? "rose" : "indigo"}>
+                      <span className="font-bold text-sm text-slate-900">
+                        {desig.name}
+                      </span>
+                      <Badge
+                        variant={desig.slug === "admin" ? "rose" : "indigo"}
+                      >
                         {desig.slug === "admin" ? "Super Admin" : "Designation"}
                       </Badge>
                     </div>
@@ -254,11 +272,14 @@ export function DesignationManager() {
                   <Key className="w-4 h-4 text-purple-700" />
                   <h3 className="font-bold text-base text-slate-900">
                     Permissions for:{" "}
-                    <span className="text-purple-700">{currentDesignation?.name}</span>
+                    <span className="text-purple-700">
+                      {currentDesignation?.name}
+                    </span>
                   </h3>
                 </div>
                 <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                  Check or uncheck boxes below to grant or revoke specific authority.
+                  Check or uncheck boxes below to grant or revoke specific
+                  authority.
                 </p>
               </div>
 
@@ -277,69 +298,71 @@ export function DesignationManager() {
               <div className="p-3 rounded-lg bg-purple-50 border border-purple-200 text-xs text-purple-900 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-purple-700 shrink-0" />
                 <span>
-                  The <strong>Admin</strong> designation possesses full, unrevokable
-                  root authority over all application subsystems.
+                  The <strong>Admin</strong> designation possesses full,
+                  unrevokable root authority over all application subsystems.
                 </span>
               </div>
             )}
 
             {/* Permissions Grouped by Module */}
             <div className="space-y-4">
-              {Object.entries(permissionsByModule).map(([moduleName, perms]) => (
-                <div
-                  key={moduleName}
-                  className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2.5"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-purple-800 uppercase tracking-wider">
-                      Module: {moduleName}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-medium">
-                      {perms.length} features
-                    </span>
-                  </div>
+              {Object.entries(permissionsByModule).map(
+                ([moduleName, perms]) => (
+                  <div
+                    key={moduleName}
+                    className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-purple-800 uppercase tracking-wider">
+                        Module: {moduleName}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium">
+                        {perms.length} features
+                      </span>
+                    </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {perms.map((perm) => {
-                      const isChecked =
-                        currentDesignation?.slug === "admin" ||
-                        activePermissionIds.includes(perm.id);
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {perms.map((perm) => {
+                        const isChecked =
+                          currentDesignation?.slug === "admin" ||
+                          activePermissionIds.includes(perm.id);
 
-                      return (
-                        <label
-                          key={perm.id}
-                          className={`flex items-start gap-2.5 p-2.5 rounded-lg border transition-all cursor-pointer ${
-                            isChecked
-                              ? "bg-white border-purple-500 text-slate-900 shadow-sm"
-                              : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            disabled={currentDesignation?.slug === "admin"}
-                            onChange={() => handleTogglePermission(perm.id)}
-                            className="accent-purple-600 w-4 h-4 mt-0.5"
-                          />
-                          <div>
-                            <span className="font-bold text-xs block text-slate-900">
-                              {perm.name}
-                            </span>
-                            <span className="text-[10px] text-purple-700 block font-mono font-semibold">
-                              {perm.slug}
-                            </span>
-                            {perm.description && (
-                              <span className="text-[11px] text-slate-600 block mt-0.5">
-                                {perm.description}
+                        return (
+                          <label
+                            key={perm.id}
+                            className={`flex items-start gap-2.5 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                              isChecked
+                                ? "bg-white border-purple-500 text-slate-900 shadow-sm"
+                                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              disabled={currentDesignation?.slug === "admin"}
+                              onChange={() => handleTogglePermission(perm.id)}
+                              className="accent-purple-600 w-4 h-4 mt-0.5"
+                            />
+                            <div>
+                              <span className="font-bold text-xs block text-slate-900">
+                                {perm.name}
                               </span>
-                            )}
-                          </div>
-                        </label>
-                      );
-                    })}
+                              <span className="text-[10px] text-purple-700 block font-mono font-semibold">
+                                {perm.slug}
+                              </span>
+                              {perm.description && (
+                                <span className="text-[11px] text-slate-600 block mt-0.5">
+                                  {perm.description}
+                                </span>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </div>
 
@@ -348,7 +371,9 @@ export function DesignationManager() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-teal-700" />
-                <h3 className="font-bold text-sm text-slate-900">Staff Designation Assignments</h3>
+                <h3 className="font-bold text-sm text-slate-900">
+                  Staff Designation Assignments
+                </h3>
               </div>
               <button
                 type="button"
@@ -360,7 +385,9 @@ export function DesignationManager() {
               </button>
             </div>
             <p className="text-xs text-slate-600 font-medium">
-              Register new staff accounts and assign roles. Registration can only be performed from inside this webapp by an authenticated administrator.
+              Register new staff accounts and assign roles. Registration can
+              only be performed from inside this webapp by an authenticated
+              administrator.
             </p>
 
             <div className="overflow-x-auto">
@@ -376,11 +403,17 @@ export function DesignationManager() {
                 <tbody className="divide-y divide-slate-100">
                   {users.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-50 transition">
-                      <td className="py-2 px-3 font-bold text-slate-900">{u.name}</td>
-                      <td className="py-2 px-3 font-mono text-slate-600">{u.email}</td>
+                      <td className="py-2 px-3 font-bold text-slate-900">
+                        {u.name}
+                      </td>
+                      <td className="py-2 px-3 font-mono text-slate-600">
+                        {u.email}
+                      </td>
                       <td className="py-2 px-3">
                         <Badge
-                          variant={u.designation?.slug === "admin" ? "rose" : "indigo"}
+                          variant={
+                            u.designation?.slug === "admin" ? "rose" : "indigo"
+                          }
                         >
                           {u.designation?.name || "Unassigned"}
                         </Badge>
@@ -419,7 +452,9 @@ export function DesignationManager() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-purple-700" />
-                <h3 className="font-bold text-base text-slate-900">Create Designation</h3>
+                <h3 className="font-bold text-base text-slate-900">
+                  Create Designation
+                </h3>
               </div>
               <button
                 type="button"
@@ -443,7 +478,9 @@ export function DesignationManager() {
                   onChange={(e) => {
                     setNewName(e.target.value);
                     if (!newSlug) {
-                      setNewSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"));
+                      setNewSlug(
+                        e.target.value.toLowerCase().replace(/\s+/g, "-"),
+                      );
                     }
                   }}
                   className="w-full h-9 px-3 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-purple-600"
@@ -508,8 +545,12 @@ export function DesignationManager() {
               <div className="flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-teal-600" />
                 <div>
-                  <h3 className="font-bold text-base text-slate-900">Register Staff Account</h3>
-                  <p className="text-[11px] text-slate-500">Internal authorization and staff account creation</p>
+                  <h3 className="font-bold text-base text-slate-900">
+                    Register Staff Account
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Internal authorization and staff account creation
+                  </p>
                 </div>
               </div>
               <button
@@ -570,7 +611,11 @@ export function DesignationManager() {
                 </label>
                 <select
                   value={regDesignationId}
-                  onChange={(e) => setRegDesignationId(e.target.value ? Number(e.target.value) : "")}
+                  onChange={(e) =>
+                    setRegDesignationId(
+                      e.target.value ? Number(e.target.value) : "",
+                    )
+                  }
                   className="w-full h-9 px-3 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-semibold focus:bg-white focus:outline-none focus:border-teal-600"
                 >
                   <option value="">-- Choose Designation --</option>

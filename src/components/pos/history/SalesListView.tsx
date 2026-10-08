@@ -1,13 +1,9 @@
 "use client";
 
+import { Pagination, QueryState } from "../shared/QueryState";
+
 import React, { useState } from "react";
-import {
-  Search,
-  Plus,
-  Printer,
-  Eye,
-  FileText,
-} from "lucide-react";
+import { Search, Plus, Printer, Eye, FileText } from "lucide-react";
 import { Customer, SaleRecord, useGetSalesQuery } from "@/redux/api/posApi";
 import { InvoiceReceiptModal } from "../sale/InvoiceReceiptModal";
 
@@ -28,7 +24,14 @@ export function SalesListView({
   const [invoiceQuery, setInvoiceQuery] = useState("");
   const [viewingSale, setViewingSale] = useState<SaleRecord | null>(null);
 
-  const { data: salesData, isLoading, refetch } = useGetSalesQuery({
+  const [page, setPage] = useState(1);
+  const {
+    data: salesData,
+    isLoading,
+    refetch,
+    error,
+  } = useGetSalesQuery({
+    page,
     start_date: startDate || undefined,
     end_date: endDate || undefined,
     customer_id: selectedCustomerId || undefined,
@@ -39,6 +42,12 @@ export function SalesListView({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
+      {error && <QueryState error={error} retry={refetch} />}
+      <Pagination
+        page={page}
+        lastPage={salesData?.data?.last_page || 1}
+        onChange={setPage}
+      />
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
         <div className="flex items-center gap-2">
@@ -69,7 +78,10 @@ export function SalesListView({
             <input
               type="date"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                setPage(1);
+                setStartDate(e.target.value);
+              }}
               className="w-full h-8.5 px-2.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-teal-600"
             />
           </div>
@@ -82,7 +94,10 @@ export function SalesListView({
             <input
               type="date"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => {
+                setPage(1);
+                setEndDate(e.target.value);
+              }}
               className="w-full h-8.5 px-2.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-teal-600"
             />
           </div>
@@ -94,7 +109,10 @@ export function SalesListView({
             </label>
             <select
               value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
+              onChange={(e) => {
+                setPage(1);
+                setSelectedCustomerId(e.target.value);
+              }}
               className="w-full h-8.5 px-2.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-medium focus:bg-white focus:outline-none focus:border-teal-600"
             >
               <option value="">All Customers</option>
@@ -115,7 +133,10 @@ export function SalesListView({
               type="text"
               placeholder="#S-202610..."
               value={invoiceQuery}
-              onChange={(e) => setInvoiceQuery(e.target.value)}
+              onChange={(e) => {
+                setPage(1);
+                setInvoiceQuery(e.target.value);
+              }}
               className="w-full h-8.5 px-2.5 rounded-lg bg-slate-50 border border-slate-300 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-teal-600 placeholder:text-slate-400"
             />
           </div>
@@ -156,13 +177,19 @@ export function SalesListView({
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={11} className="py-8 text-center text-slate-500 font-medium">
+                  <td
+                    colSpan={11}
+                    className="py-8 text-center text-slate-500 font-medium"
+                  >
                     Loading sales records...
                   </td>
                 </tr>
               ) : sales.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-8 text-center text-slate-500 font-medium">
+                  <td
+                    colSpan={11}
+                    className="py-8 text-center text-slate-500 font-medium"
+                  >
                     No sales matching criteria found.
                   </td>
                 </tr>

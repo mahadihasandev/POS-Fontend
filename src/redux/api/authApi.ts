@@ -1,9 +1,12 @@
+import { getCookie } from "cookies-next";
 import { baseApi } from "./baseApi";
 
 export interface User {
   id: number;
   name: string;
   email: string;
+  designation: { id: number; name: string; slug: string } | null;
+  permissions: string[];
 }
 
 export interface LoginRequest {
@@ -39,7 +42,7 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: ["Auth", "User"],
     }),
     register: builder.mutation<
-      { success: boolean; message: string; data: any },
+      { success: boolean; message: string; data: { user: User } },
       { name: string; email: string; password: string }
     >({
       query: (userData) => ({
@@ -53,6 +56,7 @@ export const authApi = baseApi.injectEndpoints({
       query: () => ({
         url: "/auth/logout",
         method: "POST",
+        body: { refresh_token: getCookie("refresh_token") },
       }),
       invalidatesTags: ["Auth", "User"],
     }),
@@ -61,7 +65,12 @@ export const authApi = baseApi.injectEndpoints({
       providesTags: ["User"],
     }),
   }),
-  overrideExisting: false,
+  overrideExisting: process.env.NODE_ENV === "development",
 });
 
-export const { useLoginMutation, useRegisterMutation, useLogoutMutation, useGetMeQuery } = authApi;
+export const {
+  useLoginMutation,
+  useRegisterMutation,
+  useLogoutMutation,
+  useGetMeQuery,
+} = authApi;

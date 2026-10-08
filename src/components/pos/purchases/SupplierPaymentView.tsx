@@ -1,13 +1,15 @@
 "use client";
+import { errorMessage } from "@/lib/pos";
+import { localDate } from "@/lib/pos";
+
+import { Pagination, QueryState } from "../shared/QueryState";
 
 import React, { useState } from "react";
 import {
   DollarSign,
   Building2,
   Calendar,
-  CreditCard,
   CheckCircle2,
-  Receipt,
   Printer,
   History,
 } from "lucide-react";
@@ -31,25 +33,29 @@ export function SupplierPaymentView({
   onNavigateToPurchases,
 }: SupplierPaymentViewProps) {
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | null>(
-    suppliers.length > 0 ? suppliers[0].id : null
+    suppliers.length > 0 ? suppliers[0].id : null,
   );
-  const [paymentDate, setPaymentDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [paymentDate, setPaymentDate] = useState(localDate());
   const [paymentMethod, setPaymentMethod] = useState("Bank Transfer");
   const [selectedAccount, setSelectedAccount] = useState(
-    accounts[0]?.name || "Cash"
+    accounts[0]?.name || "Cash",
   );
-  const [previousDue, setPreviousDue] = useState<number>(125000);
+  const previousDue = Number(
+    suppliers.find((s) => s.id === selectedSupplierId)?.previous_due || 0,
+  );
   const [discount, setDiscount] = useState<number>(0);
-  const [paidAmount, setPaidAmount] = useState<number>(50000);
+  const [paidAmount, setPaidAmount] = useState<number>(0);
   const [note, setNote] = useState("");
-  const [showHistory, setShowHistory] = useState(true);
 
   const [createPayment, { isLoading: isSubmitting }] =
     useCreateSupplierPaymentMutation();
 
-  const { data: paymentsData, refetch } = useGetSupplierPaymentsQuery();
+  const [page, setPage] = useState(1);
+  const {
+    data: paymentsData,
+    refetch,
+    error,
+  } = useGetSupplierPaymentsQuery({ page });
   const paymentRecords = paymentsData?.data?.data || [];
 
   const selectedSupplier = suppliers.find((s) => s.id === selectedSupplierId);
@@ -83,13 +89,19 @@ export function SupplierPaymentView({
       setPaidAmount(0);
       setDiscount(0);
       setNote("");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to record payment.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to record payment."));
     }
   };
 
   return (
     <div className="space-y-4">
+      {error && <QueryState error={error} retry={refetch} />}
+      <Pagination
+        page={page}
+        lastPage={paymentsData?.data?.last_page || 1}
+        onChange={setPage}
+      />
       {/* Top Header */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -101,7 +113,8 @@ export function SupplierPaymentView({
               Supplier Payment / Due Settlement
             </h1>
             <p className="text-xs text-slate-500">
-              Clear payables to vendor manufacturers, record ledger debits and cash outflow
+              Clear payables to vendor manufacturers, record ledger debits and
+              cash outflow
             </p>
           </div>
         </div>
@@ -131,7 +144,9 @@ export function SupplierPaymentView({
                 <Building2 className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
                 <select
                   value={selectedSupplierId || ""}
-                  onChange={(e) => setSelectedSupplierId(Number(e.target.value))}
+                  onChange={(e) =>
+                    setSelectedSupplierId(Number(e.target.value))
+                  }
                   className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-violet-500 focus:outline-hidden"
                 >
                   {suppliers.map((s) => (
@@ -146,11 +161,15 @@ export function SupplierPaymentView({
             {selectedSupplier && (
               <div className="bg-violet-50/70 p-2.5 rounded-lg border border-violet-200 text-xs flex justify-between items-center text-violet-900">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-violet-700">Code:</span>{" "}
+                  <span className="text-[10px] uppercase font-bold text-violet-700">
+                    Code:
+                  </span>{" "}
                   <strong>{selectedSupplier.code}</strong>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-violet-700">Phone:</span>{" "}
+                  <span className="text-[10px] uppercase font-bold text-violet-700">
+                    Phone:
+                  </span>{" "}
                   <strong>{selectedSupplier.phone || "01912345671"}</strong>
                 </div>
               </div>
@@ -214,7 +233,7 @@ export function SupplierPaymentView({
                 type="number"
                 step="0.01"
                 value={previousDue}
-                onChange={(e) => setPreviousDue(Math.max(0, parseFloat(e.target.value) || 0))}
+                readOnly
                 className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-bold bg-slate-50 text-slate-800"
               />
             </div>
@@ -229,7 +248,9 @@ export function SupplierPaymentView({
                   min="0"
                   step="0.01"
                   value={discount}
-                  onChange={(e) => setDiscount(Math.max(0, parseFloat(e.target.value) || 0))}
+                  onChange={(e) =>
+                    setDiscount(Math.max(0, parseFloat(e.target.value) || 0))
+                  }
                   className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-bold text-emerald-600"
                 />
               </div>
@@ -243,14 +264,18 @@ export function SupplierPaymentView({
                   min="1"
                   step="0.01"
                   value={paidAmount}
-                  onChange={(e) => setPaidAmount(Math.max(0, parseFloat(e.target.value) || 0))}
+                  onChange={(e) =>
+                    setPaidAmount(Math.max(0, parseFloat(e.target.value) || 0))
+                  }
                   className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-black text-violet-700"
                 />
               </div>
             </div>
 
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center text-xs">
-              <span className="font-bold text-slate-600">Remaining Balance:</span>
+              <span className="font-bold text-slate-600">
+                Remaining Balance:
+              </span>
               <span className="font-black text-sm text-rose-600">
                 ৳{remainingDue.toLocaleString()}
               </span>
@@ -308,17 +333,24 @@ export function SupplierPaymentView({
               <tbody className="divide-y divide-slate-100">
                 {paymentRecords.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-6 text-center text-slate-400 italic">
+                    <td
+                      colSpan={8}
+                      className="p-6 text-center text-slate-400 italic"
+                    >
                       No supplier payment history recorded.
                     </td>
                   </tr>
                 ) : (
-                  paymentRecords.map((rec: any, idx: number) => (
+                  paymentRecords.map((rec, idx) => (
                     <tr key={rec.id || idx} className="hover:bg-slate-50">
                       <td className="p-2 text-slate-400">{idx + 1}</td>
-                      <td className="p-2 font-bold text-violet-700">{rec.payment_no}</td>
+                      <td className="p-2 font-bold text-violet-700">
+                        {rec.payment_no}
+                      </td>
                       <td className="p-2 text-slate-600">{rec.payment_date}</td>
-                      <td className="p-2 font-medium text-slate-900">{rec.supplier?.name}</td>
+                      <td className="p-2 font-medium text-slate-900">
+                        {rec.supplier?.name}
+                      </td>
                       <td className="p-2 text-slate-600">{rec.account}</td>
                       <td className="p-2 text-right font-extrabold text-emerald-600">
                         ৳{Number(rec.paid_amount).toLocaleString()}

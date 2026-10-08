@@ -22,7 +22,12 @@ export function HoldListModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Held orders"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+    >
       <div className="w-full max-w-[95vw] sm:max-w-xl bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
@@ -31,9 +36,12 @@ export function HoldListModal({
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-900">Held Orders Queue</h3>
+              <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                Held Orders Queue
+              </h3>
               <p className="text-[11px] sm:text-xs text-slate-600 font-medium line-clamp-1 sm:line-clamp-none">
-                Restore held cart to resume billing without losing customer items
+                Restore held cart to resume billing without losing customer
+                items
               </p>
             </div>
           </div>
@@ -72,7 +80,10 @@ export function HoldListModal({
                     </span>
                   </div>
                   <p className="text-xs text-slate-800 font-medium">
-                    Customer: <span className="font-bold text-slate-900">{sale.customer?.name || "Walk-in Customer"}</span>
+                    Customer:{" "}
+                    <span className="font-bold text-slate-900">
+                      {sale.customer?.name || "Walk-in Customer"}
+                    </span>
                   </p>
                   <p className="text-xs text-slate-600">
                     Items: {sale.items?.length || 0} • Total:{" "}

@@ -5,6 +5,7 @@ export interface Outlet {
   name: string;
   code: string;
   address?: string;
+  phone?: string;
 }
 
 export interface Supplier {
@@ -12,6 +13,7 @@ export interface Supplier {
   name: string;
   code: string;
   phone?: string;
+  previous_due?: number;
 }
 
 export interface Customer {
@@ -31,7 +33,7 @@ export interface Marketer {
 
 export interface Product {
   id: number;
-  supplier_id?: number;
+  supplier_id?: number | null;
   name: string;
   code: string;
   barcode: string;
@@ -39,6 +41,8 @@ export interface Product {
   unit_price: string | number;
   cost_price: string | number;
   unit: string;
+  low_stock_threshold: number;
+  is_active: boolean;
 }
 
 export interface FinancialAccount {
@@ -72,6 +76,8 @@ export interface CartItem {
 }
 
 export interface CreateSalePayload {
+  request_id?: string;
+  held_sale_id?: number | null;
   outlet_id?: number | null;
   customer_id?: number | null;
   supplier_id?: number | null;
@@ -95,6 +101,11 @@ export interface CreateSalePayload {
 }
 
 export interface SaleRecord {
+  outlet_id: number;
+  customer_id?: number | null;
+  supplier_id?: number | null;
+  marketer_id?: number | null;
+  outlet?: Outlet;
   id: number;
   invoice_id: string;
   sale_date: string;
@@ -119,6 +130,7 @@ export interface SaleRecord {
   marketer?: Marketer;
   items?: Array<{
     id: number;
+    product_id: number;
     product_name: string;
     product_code: string;
     quantity: number;
@@ -164,16 +176,211 @@ export interface DashboardResponse {
       today_ga: { income: number; expense: number };
       monthly_ga: { income: number; expense: number };
       liabilities: { payable_due: number; receivable_due: number };
-      sms_info: { balance: number; credit_limit: number };
       available_amount: number;
     };
     accounts: FinancialAccount[];
     recent_sales: SaleRecord[];
+    stock: { products: number; low: number; out: number };
+    sales_trend: { date: string; sale: number }[];
   };
+}
+
+export interface Page<T> {
+  data: T[];
+  total: number;
+  current_page: number;
+  last_page: number;
+}
+export interface PurchaseItem {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_code: string;
+  quantity: number;
+  free_qty: number;
+  unit_cost: string | number;
+  subtotal: string | number;
+}
+export interface PurchaseRecord {
+  id: number;
+  chalan_no: string;
+  supplier_id: number;
+  outlet_id: number;
+  purchase_date: string;
+  note?: string;
+  subtotal: string | number;
+  discount: string | number;
+  tax: string | number;
+  total_payable: string | number;
+  paid_amount: string | number;
+  due_amount: string | number;
+  status: string;
+  supplier?: Supplier;
+  items: PurchaseItem[];
+}
+export interface SupplierPaymentRecord {
+  id: number;
+  payment_no: string;
+  payment_date: string;
+  supplier?: Supplier;
+  account: string;
+  paid_amount: string | number;
+  remaining_due: string | number;
+}
+export interface SaleReturnRecord {
+  id: number;
+  return_no: string;
+  invoice_id: string;
+  return_date: string;
+  customer?: Customer;
+  supplier?: Supplier;
+  return_amount: string | number;
+  exchange_amount: string | number;
+  net_adjustment: string | number;
+  cash_refund: string | number;
+  final_due: string | number;
+  comments?: string;
+}
+export interface MarketerSlab {
+  id?: number;
+  start_amount: number;
+  end_amount: number;
+  percentage: number;
+}
+export interface MarketerRecord {
+  id: number;
+  name: string;
+  phone: string;
+  total_sales: number;
+  commission_earned: number;
+  amount_paid: number;
+  balance: number;
+  slabs: MarketerSlab[];
+}
+export interface TransferRecord {
+  id: number;
+  transfer_no: string;
+  status: string;
+  source_name: string;
+  destination_name: string;
+  transfer_date: string;
+  total_items: number;
+}
+export interface WastageRecord {
+  id: number;
+  product_name: string;
+  quantity: number;
+  unit_cost: string | number;
+  total_loss: string | number;
+  reason: string;
+  wastage_date: string;
+}
+export interface ExpenseRecord {
+  id: number;
+  voucher_no: string;
+  title: string;
+  expense_category: string;
+  account_name: string;
+  payee_name: string;
+  amount: string | number;
+  expense_date: string;
+}
+export interface AccountTransferRecord {
+  id: number;
+  transfer_no: string;
+  from_account: string;
+  to_account: string;
+  amount: string | number;
+  transfer_date: string;
+}
+export interface PurchaseReturnRecord {
+  id: number;
+  return_no: string;
+  chalan_no: string;
+  supplier?: Supplier;
+  return_date: string;
+  total_return_amount: string | number;
+  cash_refund: string | number;
+  due_deduction: string | number;
+  status: string;
+}
+export interface CustomerCategory {
+  id: number;
+  name: string;
+  type: string;
+  description?: string;
 }
 
 export const posApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    createProduct: builder.mutation<
+      { success: boolean; data: Product },
+      Omit<Product, "id">
+    >({
+      query: (body) => ({ url: "/pos/products", method: "POST", body }),
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "PosBootstrap",
+        "Products",
+        "StockAdjustments",
+      ],
+    }),
+    updateProduct: builder.mutation<
+      { success: boolean; data: Product },
+      Product
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/pos/products/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Reports", "Dashboard", "PosBootstrap", "Products"],
+    }),
+    adjustStock: builder.mutation<
+      { success: boolean; data: Product },
+      {
+        id: number;
+        expected_quantity: number;
+        counted_quantity: number;
+        reason: string;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/pos/products/${id}/adjustments`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "PosBootstrap",
+        "Products",
+        "StockAdjustments",
+      ],
+    }),
+    getStockAdjustments: builder.query<
+      {
+        data: {
+          data: {
+            id: number;
+            product_name: string;
+            user_name: string;
+            previous_quantity: number;
+            counted_quantity: number;
+            difference: number;
+            reason: string;
+            created_at: string;
+          }[];
+          current_page: number;
+          last_page: number;
+        };
+      },
+      { page: number }
+    >({
+      query: (params) => ({ url: "/pos/stock-adjustments", params }),
+      providesTags: ["StockAdjustments"],
+    }),
     getBootstrapData: builder.query<PosBootstrapResponse, void>({
       query: () => "/pos/bootstrap",
       providesTags: ["PosBootstrap", "Products"],
@@ -199,11 +406,26 @@ export const posApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["PosBootstrap", "Products", "Sales", "HeldSales", "Dashboard"],
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "PosBootstrap",
+        "Products",
+        "Sales",
+        "HeldSales",
+      ],
     }),
 
     getSales: builder.query<
-      { success: boolean; data: { data: SaleRecord[]; total: number } },
+      {
+        success: boolean;
+        data: {
+          data: SaleRecord[];
+          total: number;
+          current_page: number;
+          last_page: number;
+        };
+      },
       {
         start_date?: string;
         end_date?: string;
@@ -219,10 +441,12 @@ export const posApi = baseApi.injectEndpoints({
       providesTags: ["Sales"],
     }),
 
-    getHeldSales: builder.query<{ success: boolean; data: SaleRecord[] }, void>({
-      query: () => "/pos/sales/held",
-      providesTags: ["HeldSales"],
-    }),
+    getHeldSales: builder.query<{ success: boolean; data: SaleRecord[] }, void>(
+      {
+        query: () => "/pos/sales/held",
+        providesTags: ["HeldSales"],
+      },
+    ),
 
     resumeSale: builder.mutation<
       { success: boolean; message: string; data: SaleRecord },
@@ -232,7 +456,7 @@ export const posApi = baseApi.injectEndpoints({
         url: `/pos/sales/held/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["HeldSales", "PosBootstrap"],
+      invalidatesTags: ["Reports", "Dashboard", "HeldSales", "PosBootstrap"],
     }),
 
     createCollection: builder.mutation<
@@ -244,7 +468,7 @@ export const posApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Collections", "PosBootstrap", "Dashboard"],
+      invalidatesTags: ["Reports", "Dashboard", "Collections", "PosBootstrap"],
     }),
 
     getCollections: builder.query<
@@ -262,7 +486,7 @@ export const posApi = baseApi.injectEndpoints({
 
     // Purchases
     getPurchases: builder.query<
-      { success: boolean; data: { data: any[]; total: number } },
+      { success: boolean; data: Page<PurchaseRecord> },
       { supplier_id?: number | string; chalan_no?: string; page?: number }
     >({
       query: (params) => ({
@@ -273,40 +497,54 @@ export const posApi = baseApi.injectEndpoints({
     }),
 
     createPurchase: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/purchases",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Purchases", "Products", "PosBootstrap", "Dashboard"],
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "Purchases",
+        "Products",
+        "PosBootstrap",
+      ],
     }),
 
     getSupplierPayments: builder.query<
-      { success: boolean; data: { data: any[]; total: number } },
-      void
+      { success: boolean; data: Page<SupplierPaymentRecord> },
+      { page?: number } | void
     >({
-      query: () => "/pos/purchases/payments",
+      query: (params) => ({
+        params: params || undefined,
+        url: "/pos/purchases/payments",
+      }),
       providesTags: ["SupplierPayments"],
     }),
 
     createSupplierPayment: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/purchases/payments",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["SupplierPayments", "PosBootstrap", "Dashboard"],
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "SupplierPayments",
+        "PosBootstrap",
+      ],
     }),
 
     // Sales Returns & Exchanges
     getSaleReturns: builder.query<
-      { success: boolean; data: { data: any[]; total: number } },
+      { success: boolean; data: Page<SaleReturnRecord> },
       { customer_id?: number | string; return_no?: string; page?: number }
     >({
       query: (params) => ({
@@ -317,116 +555,159 @@ export const posApi = baseApi.injectEndpoints({
     }),
 
     createSaleReturn: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/returns",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["SaleReturns", "Sales", "Products", "PosBootstrap"],
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "SaleReturns",
+        "Sales",
+        "Products",
+        "PosBootstrap",
+      ],
     }),
 
     // Marketers
-    getMarketers: builder.query<{ success: boolean; data: any[] }, void>({
+    getMarketers: builder.query<
+      { success: boolean; data: MarketerRecord[] },
+      void
+    >({
       query: () => "/pos/marketers",
       providesTags: ["Marketers"],
     }),
 
     createMarketer: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/marketers",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Marketers", "PosBootstrap"],
+      invalidatesTags: ["Reports", "Dashboard", "Marketers", "PosBootstrap"],
     }),
 
     createMarketerPayment: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/marketers/payments",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Marketers"],
+      invalidatesTags: ["Reports", "Dashboard", "Marketers"],
     }),
 
     // Stock Transfers
     getStockTransfers: builder.query<
-      { success: boolean; data: { data: any[]; total: number } },
-      void
+      { success: boolean; data: Page<TransferRecord> },
+      { page?: number } | void
     >({
-      query: () => "/pos/transfers",
+      query: (params) => ({
+        params: params || undefined,
+        url: "/pos/transfers",
+      }),
       providesTags: ["Transfers"],
     }),
 
     createStockTransfer: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/transfers",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Transfers", "Products", "PosBootstrap"],
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "Transfers",
+        "Products",
+        "PosBootstrap",
+      ],
     }),
 
     // Wastages
     getWastages: builder.query<
-      { success: boolean; data: { data: any[]; total: number } },
-      void
+      { success: boolean; data: Page<WastageRecord> },
+      { page?: number } | void
     >({
-      query: () => "/pos/wastages",
+      query: (params) => ({
+        params: params || undefined,
+        url: "/pos/wastages",
+      }),
       providesTags: ["Wastages"],
     }),
 
     createWastage: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/wastages",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Wastages", "Products", "PosBootstrap"],
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "Wastages",
+        "Products",
+        "PosBootstrap",
+      ],
     }),
 
     // Suppliers & Customers
     createSupplier: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/suppliers",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["PosBootstrap"],
+      invalidatesTags: ["Reports", "Dashboard", "PosBootstrap"],
+    }),
+
+    importSuppliers: builder.mutation<
+      { success: boolean; data: { imported: number } },
+      FormData
+    >({
+      query: (body) => ({ url: "/pos/suppliers/import", method: "POST", body }),
+      invalidatesTags: ["PosBootstrap", "Dashboard", "Reports"],
+    }),
+    importCustomers: builder.mutation<
+      { success: boolean; data: { imported: number } },
+      FormData
+    >({
+      query: (body) => ({ url: "/pos/customers/import", method: "POST", body }),
+      invalidatesTags: ["PosBootstrap", "Dashboard", "Reports"],
     }),
 
     createCustomer: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/customers",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["PosBootstrap"],
+      invalidatesTags: ["Reports", "Dashboard", "PosBootstrap"],
     }),
 
     getCustomerCategories: builder.query<
-      { success: boolean; data: any[] },
+      { success: boolean; data: CustomerCategory[] },
       void
     >({
       query: () => "/pos/customer-categories",
@@ -434,8 +715,18 @@ export const posApi = baseApi.injectEndpoints({
 
     // Reports
     getReports: builder.query<
-      { success: boolean; message: string; data: any },
-      { type: string; threshold?: number; date?: string; customer_id?: number; supplier_id?: number }
+      {
+        success: boolean;
+        message: string;
+        data: Record<string, unknown> | Record<string, unknown>[];
+      },
+      {
+        type: string;
+        threshold?: number;
+        date?: string;
+        customer_id?: number;
+        supplier_id?: number;
+      }
     >({
       query: (params) => ({
         url: "/pos/reports",
@@ -446,8 +737,8 @@ export const posApi = baseApi.injectEndpoints({
 
     // Purchase Returns (Vendor debit note)
     getPurchaseReturns: builder.query<
-      { success: boolean; data: any },
-      { supplier_id?: number; return_no?: string } | void
+      { success: boolean; data: Page<PurchaseReturnRecord> },
+      { page?: number; supplier_id?: number; return_no?: string } | void
     >({
       query: (params) => ({
         url: "/pos/purchases/returns",
@@ -457,21 +748,28 @@ export const posApi = baseApi.injectEndpoints({
     }),
 
     createPurchaseReturn: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/purchases/returns",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["PurchaseReturns", "Purchases", "Products", "PosBootstrap", "Reports"],
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "PurchaseReturns",
+        "Purchases",
+        "Products",
+        "PosBootstrap",
+      ],
     }),
 
     // General Expenses
     getExpenses: builder.query<
-      { success: boolean; data: any },
-      { category?: string; date?: string } | void
+      { success: boolean; data: Page<ExpenseRecord> },
+      { page?: number; category?: string; date?: string } | void
     >({
       query: (params) => ({
         url: "/pos/expenses",
@@ -481,42 +779,54 @@ export const posApi = baseApi.injectEndpoints({
     }),
 
     createExpense: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/expenses",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Expenses", "PosBootstrap", "Reports", "Dashboard"],
+      invalidatesTags: ["Reports", "Dashboard", "Expenses", "PosBootstrap"],
     }),
 
     // Account Transfers
     getAccountTransfers: builder.query<
-      { success: boolean; data: any },
-      void
+      { success: boolean; data: Page<AccountTransferRecord> },
+      { page?: number } | void
     >({
-      query: () => "/pos/accounts/transfers",
+      query: (params) => ({
+        params: params || undefined,
+        url: "/pos/accounts/transfers",
+      }),
       providesTags: ["AccountTransfers"],
     }),
 
     createAccountTransfer: builder.mutation<
-      { success: boolean; message: string; data: any },
-      any
+      { success: boolean; message: string; data: unknown },
+      Record<string, unknown>
     >({
       query: (body) => ({
         url: "/pos/accounts/transfers",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["AccountTransfers", "PosBootstrap", "Reports"],
+      invalidatesTags: [
+        "Reports",
+        "Dashboard",
+        "AccountTransfers",
+        "PosBootstrap",
+      ],
     }),
   }),
-  overrideExisting: false,
+  overrideExisting: process.env.NODE_ENV === "development",
 });
 
 export const {
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useAdjustStockMutation,
+  useGetStockAdjustmentsQuery,
   useGetBootstrapDataQuery,
   useLazySearchProductsQuery,
   useCreateSaleMutation,
@@ -542,6 +852,8 @@ export const {
   useCreateWastageMutation,
   useCreateSupplierMutation,
   useCreateCustomerMutation,
+  useImportCustomersMutation,
+  useImportSuppliersMutation,
   useGetCustomerCategoriesQuery,
   useGetReportsQuery,
   useGetPurchaseReturnsQuery,
@@ -551,4 +863,3 @@ export const {
   useGetAccountTransfersQuery,
   useCreateAccountTransferMutation,
 } = posApi;
-

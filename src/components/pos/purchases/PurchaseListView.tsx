@@ -1,5 +1,7 @@
 "use client";
 
+import { Pagination, QueryState } from "../shared/QueryState";
+
 import React, { useState } from "react";
 import {
   ShoppingBag,
@@ -8,14 +10,9 @@ import {
   Eye,
   Plus,
   RefreshCw,
-  Calendar,
-  Building2,
   DollarSign,
 } from "lucide-react";
-import {
-  Supplier,
-  useGetPurchasesQuery,
-} from "@/redux/api/posApi";
+import { Supplier, useGetPurchasesQuery } from "@/redux/api/posApi";
 
 interface PurchaseListViewProps {
   suppliers: Supplier[];
@@ -30,9 +27,18 @@ export function PurchaseListView({
 }: PurchaseListViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
-  const [viewingPurchase, setViewingPurchase] = useState<any | null>(null);
+  const [viewingPurchase, setViewingPurchase] = useState<
+    import("@/redux/api/posApi").PurchaseRecord | null
+  >(null);
 
-  const { data: purchasesData, isLoading, refetch } = useGetPurchasesQuery({
+  const [page, setPage] = useState(1);
+  const {
+    data: purchasesData,
+    isLoading,
+    refetch,
+    error,
+  } = useGetPurchasesQuery({
+    page,
     supplier_id: selectedSupplierId || undefined,
     chalan_no: searchTerm || undefined,
   });
@@ -41,6 +47,12 @@ export function PurchaseListView({
 
   return (
     <div className="space-y-4">
+      {error && <QueryState error={error} retry={refetch} />}
+      <Pagination
+        page={page}
+        lastPage={purchasesData?.data?.last_page || 1}
+        onChange={setPage}
+      />
       {/* Header bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -52,7 +64,8 @@ export function PurchaseListView({
               Purchase Information & Chalan List
             </h1>
             <p className="text-xs text-slate-500">
-              Browse vendor supplier purchase invoices, chalan inventory intake, and payables
+              Browse vendor supplier purchase invoices, chalan inventory intake,
+              and payables
             </p>
           </div>
         </div>
@@ -93,7 +106,10 @@ export function PurchaseListView({
             type="text"
             placeholder="Search by Chalan / Invoice #..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setSearchTerm(e.target.value);
+            }}
             className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
           />
         </div>
@@ -101,7 +117,10 @@ export function PurchaseListView({
         <div className="w-64">
           <select
             value={selectedSupplierId}
-            onChange={(e) => setSelectedSupplierId(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setSelectedSupplierId(e.target.value);
+            }}
             className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
           >
             <option value="">All Suppliers</option>
@@ -135,22 +154,37 @@ export function PurchaseListView({
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-slate-500 font-medium">
+                  <td
+                    colSpan={10}
+                    className="p-8 text-center text-slate-500 font-medium"
+                  >
                     Loading purchases...
                   </td>
                 </tr>
               ) : list.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-slate-400 italic">
+                  <td
+                    colSpan={10}
+                    className="p-8 text-center text-slate-400 italic"
+                  >
                     No purchase records found.
                   </td>
                 </tr>
               ) : (
-                list.map((p: any, idx: number) => (
-                  <tr key={p.id || idx} className="hover:bg-slate-50 transition">
-                    <td className="px-3.5 py-2.5 text-slate-400 font-semibold">{idx + 1}</td>
-                    <td className="px-3.5 py-2.5 font-bold text-teal-800">{p.chalan_no}</td>
-                    <td className="px-3.5 py-2.5 text-slate-600">{p.purchase_date}</td>
+                list.map((p, idx) => (
+                  <tr
+                    key={p.id || idx}
+                    className="hover:bg-slate-50 transition"
+                  >
+                    <td className="px-3.5 py-2.5 text-slate-400 font-semibold">
+                      {idx + 1}
+                    </td>
+                    <td className="px-3.5 py-2.5 font-bold text-teal-800">
+                      {p.chalan_no}
+                    </td>
+                    <td className="px-3.5 py-2.5 text-slate-600">
+                      {p.purchase_date}
+                    </td>
                     <td className="px-3.5 py-2.5 font-medium text-slate-900">
                       {p.supplier?.name || "General Supplier"}
                     </td>
@@ -209,7 +243,8 @@ export function PurchaseListView({
                   Chalan #{viewingPurchase.chalan_no}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Supplier: {viewingPurchase.supplier?.name} | Date: {viewingPurchase.purchase_date}
+                  Supplier: {viewingPurchase.supplier?.name} | Date:{" "}
+                  {viewingPurchase.purchase_date}
                 </p>
               </div>
               <button
@@ -233,12 +268,16 @@ export function PurchaseListView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {(viewingPurchase.items || []).map((it: any, i: number) => (
+                  {(viewingPurchase.items || []).map((it, i) => (
                     <tr key={it.id || i}>
                       <td className="p-2 font-medium">{it.product_name}</td>
-                      <td className="p-2 text-center font-bold">{it.quantity}</td>
+                      <td className="p-2 text-center font-bold">
+                        {it.quantity}
+                      </td>
                       <td className="p-2 text-center">{it.free_qty || 0}</td>
-                      <td className="p-2 text-right">৳{Number(it.unit_cost).toLocaleString()}</td>
+                      <td className="p-2 text-right">
+                        ৳{Number(it.unit_cost).toLocaleString()}
+                      </td>
                       <td className="p-2 text-right font-bold text-slate-900">
                         ৳{Number(it.subtotal).toLocaleString()}
                       </td>
@@ -249,9 +288,21 @@ export function PurchaseListView({
             </div>
 
             <div className="border-t border-slate-200 pt-3 flex justify-between text-xs font-bold text-slate-700">
-              <span>Paid: ৳{Number(viewingPurchase.paid_amount).toLocaleString()}</span>
-              <span>Due: <strong className="text-rose-600">৳{Number(viewingPurchase.due_amount).toLocaleString()}</strong></span>
-              <span>Total: <strong className="text-teal-700">৳{Number(viewingPurchase.total_payable).toLocaleString()}</strong></span>
+              <span>
+                Paid: ৳{Number(viewingPurchase.paid_amount).toLocaleString()}
+              </span>
+              <span>
+                Due:{" "}
+                <strong className="text-rose-600">
+                  ৳{Number(viewingPurchase.due_amount).toLocaleString()}
+                </strong>
+              </span>
+              <span>
+                Total:{" "}
+                <strong className="text-teal-700">
+                  ৳{Number(viewingPurchase.total_payable).toLocaleString()}
+                </strong>
+              </span>
             </div>
           </div>
         </div>

@@ -1,5 +1,8 @@
 "use client";
+import { errorMessage } from "@/lib/pos";
+import { localDate } from "@/lib/pos";
 
+import { Pagination, QueryState } from "../shared/QueryState";
 import React, { useState } from "react";
 import {
   DollarSign,
@@ -7,10 +10,7 @@ import {
   ArrowRightLeft,
   Receipt,
   Plus,
-  Building2,
-  Calendar,
   CheckCircle2,
-  FileText,
 } from "lucide-react";
 import {
   FinancialAccount,
@@ -25,33 +25,41 @@ export interface AccountsViewProps {
 }
 
 export function AccountsView({ accounts }: AccountsViewProps) {
-  const [activeTab, setActiveTab] = useState<"balances" | "record_expense" | "bank_transfer" | "expenses_list">("balances");
+  const [activeTab, setActiveTab] = useState<
+    "balances" | "record_expense" | "bank_transfer" | "expenses_list"
+  >("balances");
 
   // Expense form state
   const [expenseCategory, setExpenseCategory] = useState("Electricity bill");
   const [expenseTitle, setExpenseTitle] = useState("");
   const [expenseAmount, setExpenseAmount] = useState<number | "">("");
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0]);
-  const [expenseAccount, setExpenseAccount] = useState("Cash");
+  const [expenseDate, setExpenseDate] = useState(localDate());
+  const [expenseAccount, setExpenseAccount] = useState(accounts[0]?.name || "");
   const [payeeName, setPayeeName] = useState("");
   const [expenseNote, setExpenseNote] = useState("");
 
   // Transfer form state
-  const [fromAccount, setFromAccount] = useState("Cash");
-  const [toAccount, setToAccount] = useState(accounts.find((a) => a.name !== "Cash")?.name || "Bank Asia");
+  const [fromAccount, setFromAccount] = useState(accounts[0]?.name || "");
+  const [toAccount, setToAccount] = useState(
+    accounts.find((a) => a.name !== "Cash")?.name || "",
+  );
   const [transferAmount, setTransferAmount] = useState<number | "">("");
-  const [transferDate, setTransferDate] = useState(new Date().toISOString().split("T")[0]);
+  const [transferDate, setTransferDate] = useState(localDate());
   const [transferRef, setTransferRef] = useState("");
 
   // RTK Query
-  const { data: expensesData, refetch: refetchExpenses } = useGetExpensesQuery();
-  const [createExpense, { isLoading: isCreatingExpense }] = useCreateExpenseMutation();
-  const [createTransfer, { isLoading: isCreatingTransfer }] = useCreateAccountTransferMutation();
+  const [expensePage, setExpensePage] = useState(1);
+  const {
+    data: expensesData,
+    error: expenseError,
+    refetch: refetchExpenses,
+  } = useGetExpensesQuery({ page: expensePage });
+  const [createExpense, { isLoading: isCreatingExpense }] =
+    useCreateExpenseMutation();
+  const [createTransfer, { isLoading: isCreatingTransfer }] =
+    useCreateAccountTransferMutation();
 
-  const totalBalance = accounts.reduce(
-    (sum, a) => sum + Number(a.balance),
-    0
-  );
+  const totalBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
 
   const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,8 +90,8 @@ export function AccountsView({ accounts }: AccountsViewProps) {
       setExpenseNote("");
       refetchExpenses();
       setActiveTab("expenses_list");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to record expense");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to record expense"));
     }
   };
 
@@ -111,12 +119,12 @@ export function AccountsView({ accounts }: AccountsViewProps) {
       setTransferAmount("");
       setTransferRef("");
       setActiveTab("balances");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to process transfer");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to process transfer"));
     }
   };
 
-  const expensesList = expensesData?.data?.data || expensesData?.data || [];
+  const expensesList = expensesData?.data?.data || [];
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
@@ -131,7 +139,8 @@ export function AccountsView({ accounts }: AccountsViewProps) {
               General Accounts & Liquid Ledger
             </h1>
             <p className="text-xs text-slate-500">
-              Manage cash drawers, bank deposits, daily expense vouchers, and fund transfers
+              Manage cash drawers, bank deposits, daily expense vouchers, and
+              fund transfers
             </p>
           </div>
         </div>
@@ -141,7 +150,8 @@ export function AccountsView({ accounts }: AccountsViewProps) {
             Total Capital in Vaults
           </span>
           <span className="font-mono font-black text-xl text-teal-800">
-            ৳{totalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            ৳
+            {totalBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </span>
         </div>
       </div>
@@ -226,9 +236,14 @@ export function AccountsView({ accounts }: AccountsViewProps) {
               </div>
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-[11px] text-slate-600 font-semibold">Current Balance:</span>
+                <span className="text-[11px] text-slate-600 font-semibold">
+                  Current Balance:
+                </span>
                 <span className="font-mono font-black text-sm text-slate-900">
-                  ৳{Number(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  ৳
+                  {Number(acc.balance).toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  })}
                 </span>
               </div>
             </div>
@@ -238,13 +253,17 @@ export function AccountsView({ accounts }: AccountsViewProps) {
 
       {/* 2. Record Expense Voucher (Image 11.04.12 AM / 11.02.18 AM) */}
       {activeTab === "record_expense" && (
-        <form onSubmit={handleExpenseSubmit} className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
+        <form
+          onSubmit={handleExpenseSubmit}
+          className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4"
+        >
           <div className="border-b border-slate-100 pb-3">
             <h2 className="text-sm font-extrabold text-slate-900">
               New General Expense Voucher
             </h2>
             <p className="text-xs text-slate-500">
-              Record office bills, staff salaries, transportation, food, or advance disbursements
+              Record office bills, staff salaries, transportation, food, or
+              advance disbursements
             </p>
           </div>
 
@@ -265,7 +284,9 @@ export function AccountsView({ accounts }: AccountsViewProps) {
                 <option value="Daily Allowance">Daily Allowance</option>
                 <option value="Food Expense">Food Expense</option>
                 <option value="Advanced salary">Advanced salary</option>
-                <option value="Shop Maintenance">Shop Maintenance / Repairs</option>
+                <option value="Shop Maintenance">
+                  Shop Maintenance / Repairs
+                </option>
                 <option value="Others">Others</option>
               </select>
             </div>
@@ -294,7 +315,11 @@ export function AccountsView({ accounts }: AccountsViewProps) {
                 min="0.01"
                 placeholder="0.00"
                 value={expenseAmount}
-                onChange={(e) => setExpenseAmount(e.target.value ? parseFloat(e.target.value) : "")}
+                onChange={(e) =>
+                  setExpenseAmount(
+                    e.target.value ? parseFloat(e.target.value) : "",
+                  )
+                }
                 required
                 className="w-full h-9 px-2.5 rounded-lg border border-slate-300 font-black text-rose-700 focus:outline-none focus:border-rose-600"
               />
@@ -363,7 +388,9 @@ export function AccountsView({ accounts }: AccountsViewProps) {
               className="px-6 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>{isCreatingExpense ? "Recording..." : "Save Expense Voucher"}</span>
+              <span>
+                {isCreatingExpense ? "Recording..." : "Save Expense Voucher"}
+              </span>
             </button>
           </div>
         </form>
@@ -371,7 +398,10 @@ export function AccountsView({ accounts }: AccountsViewProps) {
 
       {/* 3. Internal Bank Transfer (Image 11.02.26 AM) */}
       {activeTab === "bank_transfer" && (
-        <form onSubmit={handleTransferSubmit} className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
+        <form
+          onSubmit={handleTransferSubmit}
+          className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4"
+        >
           <div className="border-b border-slate-100 pb-3">
             <h2 className="text-sm font-extrabold text-slate-900">
               Internal Bank & Cash Transfer
@@ -401,7 +431,8 @@ export function AccountsView({ accounts }: AccountsViewProps) {
 
             <div>
               <label className="block font-bold text-slate-700 mb-1">
-                Destination Account (To) <span className="text-rose-500">*</span>
+                Destination Account (To){" "}
+                <span className="text-rose-500">*</span>
               </label>
               <select
                 value={toAccount}
@@ -426,7 +457,11 @@ export function AccountsView({ accounts }: AccountsViewProps) {
                 min="1"
                 placeholder="0.00"
                 value={transferAmount}
-                onChange={(e) => setTransferAmount(e.target.value ? parseFloat(e.target.value) : "")}
+                onChange={(e) =>
+                  setTransferAmount(
+                    e.target.value ? parseFloat(e.target.value) : "",
+                  )
+                }
                 required
                 className="w-full h-9 px-2.5 rounded-lg border border-slate-300 font-black text-cyan-800 focus:outline-none focus:border-cyan-600"
               />
@@ -465,7 +500,11 @@ export function AccountsView({ accounts }: AccountsViewProps) {
               className="px-6 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs shadow-md transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
             >
               <ArrowRightLeft className="w-4 h-4" />
-              <span>{isCreatingTransfer ? "Transferring..." : "Complete Bank Transfer"}</span>
+              <span>
+                {isCreatingTransfer
+                  ? "Transferring..."
+                  : "Complete Bank Transfer"}
+              </span>
             </button>
           </div>
         </form>
@@ -485,6 +524,14 @@ export function AccountsView({ accounts }: AccountsViewProps) {
             </button>
           </div>
 
+          {expenseError && (
+            <QueryState error={expenseError} retry={refetchExpenses} />
+          )}
+          <Pagination
+            page={expensePage}
+            lastPage={expensesData?.data.last_page || 1}
+            onChange={setExpensePage}
+          />
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 font-bold uppercase tracking-wider text-[11px]">
@@ -500,22 +547,40 @@ export function AccountsView({ accounts }: AccountsViewProps) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {expensesList.length > 0 ? (
-                  expensesList.map((exp: any) => (
+                  expensesList.map((exp) => (
                     <tr key={exp.id} className="hover:bg-slate-50 transition">
-                      <td className="p-3 font-mono font-bold text-rose-700">{exp.voucher_no}</td>
-                      <td className="p-3 font-mono text-slate-600">{exp.expense_date}</td>
-                      <td className="p-3 font-bold text-slate-900">{exp.expense_category}</td>
-                      <td className="p-3 text-slate-700 font-medium">{exp.title}</td>
-                      <td className="p-3 text-slate-600">{exp.payee_name || "-"}</td>
-                      <td className="p-3 font-semibold text-slate-800">{exp.account_name}</td>
+                      <td className="p-3 font-mono font-bold text-rose-700">
+                        {exp.voucher_no}
+                      </td>
+                      <td className="p-3 font-mono text-slate-600">
+                        {exp.expense_date}
+                      </td>
+                      <td className="p-3 font-bold text-slate-900">
+                        {exp.expense_category}
+                      </td>
+                      <td className="p-3 text-slate-700 font-medium">
+                        {exp.title}
+                      </td>
+                      <td className="p-3 text-slate-600">
+                        {exp.payee_name || "-"}
+                      </td>
+                      <td className="p-3 font-semibold text-slate-800">
+                        {exp.account_name}
+                      </td>
                       <td className="p-3 text-right font-black text-rose-700">
-                        ৳{Number(exp.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ৳
+                        {Number(exp.amount).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-slate-400 italic">
+                    <td
+                      colSpan={7}
+                      className="p-6 text-center text-slate-400 italic"
+                    >
                       No expense vouchers recorded yet.
                     </td>
                   </tr>
