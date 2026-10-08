@@ -1,16 +1,9 @@
 "use client";
 
+import { Pagination, QueryState } from "../shared/QueryState";
+
 import React, { useState } from "react";
-import {
-  RotateCcw,
-  Search,
-  Printer,
-  Eye,
-  Plus,
-  RefreshCw,
-  Calendar,
-  FileSpreadsheet,
-} from "lucide-react";
+import { RotateCcw, Search, Printer, Plus, RefreshCw } from "lucide-react";
 import { useGetSaleReturnsQuery, Customer } from "@/redux/api/posApi";
 
 interface SaleExchangeListViewProps {
@@ -25,7 +18,14 @@ export function SaleExchangeListView({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
 
-  const { data: returnsData, isLoading, refetch } = useGetSaleReturnsQuery({
+  const [page, setPage] = useState(1);
+  const {
+    data: returnsData,
+    isLoading,
+    refetch,
+    error,
+  } = useGetSaleReturnsQuery({
+    page,
     customer_id: selectedCustomerId || undefined,
     return_no: searchTerm || undefined,
   });
@@ -34,6 +34,12 @@ export function SaleExchangeListView({
 
   return (
     <div className="space-y-4">
+      {error && <QueryState error={error} retry={refetch} />}
+      <Pagination
+        page={page}
+        lastPage={returnsData?.data?.last_page || 1}
+        onChange={setPage}
+      />
       {/* Top Header */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -45,7 +51,8 @@ export function SaleExchangeListView({
               Sale Return & Exchange List
             </h1>
             <p className="text-xs text-slate-500">
-              Audit log of product warranty returns, replacements, and ledger reconciliations
+              Audit log of product warranty returns, replacements, and ledger
+              reconciliations
             </p>
           </div>
         </div>
@@ -78,7 +85,10 @@ export function SaleExchangeListView({
             type="text"
             placeholder="Search by Return # (e.g. RET-2026...)"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setSearchTerm(e.target.value);
+            }}
             className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
           />
         </div>
@@ -86,7 +96,10 @@ export function SaleExchangeListView({
         <div className="w-64">
           <select
             value={selectedCustomerId}
-            onChange={(e) => setSelectedCustomerId(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setSelectedCustomerId(e.target.value);
+            }}
             className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white"
           >
             <option value="">All Customers</option>
@@ -120,26 +133,43 @@ export function SaleExchangeListView({
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-slate-500 font-medium">
+                  <td
+                    colSpan={10}
+                    className="p-8 text-center text-slate-500 font-medium"
+                  >
                     Loading sale return history...
                   </td>
                 </tr>
               ) : list.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-slate-400 italic">
+                  <td
+                    colSpan={10}
+                    className="p-8 text-center text-slate-400 italic"
+                  >
                     No sale return records found.
                   </td>
                 </tr>
               ) : (
-                list.map((r: any, idx: number) => (
-                  <tr key={r.id || idx} className="hover:bg-slate-50 transition">
-                    <td className="px-3.5 py-2.5 text-slate-400 font-semibold">{idx + 1}</td>
-                    <td className="px-3.5 py-2.5 font-bold text-indigo-700">{r.return_no}</td>
-                    <td className="px-3.5 py-2.5 text-slate-600">{r.return_date}</td>
+                list.map((r, idx) => (
+                  <tr
+                    key={r.id || idx}
+                    className="hover:bg-slate-50 transition"
+                  >
+                    <td className="px-3.5 py-2.5 text-slate-400 font-semibold">
+                      {idx + 1}
+                    </td>
+                    <td className="px-3.5 py-2.5 font-bold text-indigo-700">
+                      {r.return_no}
+                    </td>
+                    <td className="px-3.5 py-2.5 text-slate-600">
+                      {r.return_date}
+                    </td>
                     <td className="px-3.5 py-2.5 font-medium text-slate-900">
                       {r.customer?.name || "General Customer"}
                     </td>
-                    <td className="px-3.5 py-2.5 text-slate-500">{r.invoice_id || "—"}</td>
+                    <td className="px-3.5 py-2.5 text-slate-500">
+                      {r.invoice_id || "—"}
+                    </td>
                     <td className="px-3.5 py-2.5 text-right font-bold text-rose-600">
                       ৳{Number(r.return_amount).toLocaleString()}
                     </td>

@@ -1,9 +1,16 @@
 "use client";
+import { localDate } from "@/lib/pos";
 
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { Plus, MessageSquare, CheckCircle2 } from "lucide-react";
-import { Customer, FinancialAccount, Supplier, useCreateCollectionMutation, useGetCollectionsQuery } from "@/redux/api/posApi";
+import { Plus, CheckCircle2 } from "lucide-react";
+import {
+  Customer,
+  FinancialAccount,
+  Supplier,
+  useCreateCollectionMutation,
+  useGetCollectionsQuery,
+} from "@/redux/api/posApi";
 import { sounds } from "@/lib/sound";
 
 export interface CustomerDueCollectionProps {
@@ -19,24 +26,29 @@ export function CustomerDueCollection({
   suppliers = [],
   initialMode = "general",
 }: CustomerDueCollectionProps) {
-  const [collectionMode, setCollectionMode] = useState<"general" | "supplier_wise">(initialMode);
+  const [collectionMode, setCollectionMode] = useState<
+    "general" | "supplier_wise"
+  >(initialMode);
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | "">("");
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
-  const [collectionDate, setCollectionDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
+    null,
   );
+  const [collectionDate, setCollectionDate] = useState<string>(localDate());
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [account, setAccount] = useState("Cash");
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [paidAmount, setPaidAmount] = useState<number>(0);
-  const [sendSms, setSendSms] = useState(true);
 
   const [createCollection, { isLoading }] = useCreateCollectionMutation();
   const { data: collectionsData, refetch } = useGetCollectionsQuery();
 
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
-  const receivableDue = selectedCustomer ? Number(selectedCustomer.previous_due) : 0;
-  const advancedAmount = selectedCustomer ? Number(selectedCustomer.advanced_amount) : 0;
+  const receivableDue = selectedCustomer
+    ? Number(selectedCustomer.previous_due)
+    : 0;
+  const advancedAmount = selectedCustomer
+    ? Number(selectedCustomer.advanced_amount)
+    : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,17 +70,21 @@ export function CustomerDueCollection({
         receivable_due: receivableDue,
         discount_amount: discountAmount,
         paid_amount: paidAmount,
-        send_sms: sendSms,
+        send_sms: false,
       }).unwrap();
 
       sounds.playSuccessChime();
-      toast.success(res.message || "Customer collection recorded successfully!");
+      toast.success(
+        res.message || "Customer collection recorded successfully!",
+      );
       setSelectedCustomerId(null);
       setDiscountAmount(0);
       setPaidAmount(0);
       refetch();
     } catch (err: unknown) {
-      const msg = (err as { data?: { message?: string } })?.data?.message || "Failed to record collection.";
+      const msg =
+        (err as { data?: { message?: string } })?.data?.message ||
+        "Failed to record collection.";
       toast.error(msg);
     }
   };
@@ -79,9 +95,13 @@ export function CustomerDueCollection({
       <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-cyan-800 px-5 py-3 rounded-t-xl border-b border-teal-900/20 flex flex-wrap items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-2 text-white font-extrabold text-base">
           <Plus className="w-5 h-5 text-teal-200 stroke-[3]" />
-          <span>{collectionMode === "supplier_wise" ? "Supplier Wise Due Collection" : "Customer Due Collection"}</span>
+          <span>
+            {collectionMode === "supplier_wise"
+              ? "Supplier Wise Due Collection"
+              : "Customer Due Collection"}
+          </span>
         </div>
-        
+
         {/* Collection Mode Switcher (Matching Screenshot 11.00.09 AM) */}
         <div className="flex items-center gap-1 bg-teal-900/40 p-1 rounded-lg border border-teal-600/40 text-xs font-bold">
           <button
@@ -117,10 +137,16 @@ export function CustomerDueCollection({
         {collectionMode === "supplier_wise" && (
           <div className="p-3 bg-violet-50 border border-violet-200 rounded-lg flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-violet-900">Select Supplier Brand:</span>
+              <span className="font-extrabold text-violet-900">
+                Select Supplier Brand:
+              </span>
               <select
                 value={selectedSupplierId}
-                onChange={(e) => setSelectedSupplierId(e.target.value ? Number(e.target.value) : "")}
+                onChange={(e) =>
+                  setSelectedSupplierId(
+                    e.target.value ? Number(e.target.value) : "",
+                  )
+                }
                 className="h-8 px-2.5 rounded-md border border-violet-300 font-bold text-violet-950 bg-white"
               >
                 <option value="">-- All Suppliers / General Brand --</option>
@@ -148,14 +174,17 @@ export function CustomerDueCollection({
               <select
                 value={selectedCustomerId ?? ""}
                 onChange={(e) =>
-                  setSelectedCustomerId(e.target.value ? Number(e.target.value) : null)
+                  setSelectedCustomerId(
+                    e.target.value ? Number(e.target.value) : null,
+                  )
                 }
                 className="w-full h-9 px-3 rounded-lg bg-white border border-slate-300 text-slate-900 font-semibold focus:outline-none focus:border-teal-600"
               >
                 <option value="">Search Customer / Select...</option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.code}) — Due: {Number(c.previous_due).toFixed(2)} TK
+                    {c.name} ({c.code}) — Due:{" "}
+                    {Number(c.previous_due).toFixed(2)} TK
                   </option>
                 ))}
               </select>
@@ -163,7 +192,9 @@ export function CustomerDueCollection({
 
             {/* Customer Code */}
             <div>
-              <label className="block text-slate-700 font-bold mb-1">Customer Code</label>
+              <label className="block text-slate-700 font-bold mb-1">
+                Customer Code
+              </label>
               <input
                 type="text"
                 readOnly
@@ -175,7 +206,9 @@ export function CustomerDueCollection({
 
             {/* Mobile Number */}
             <div>
-              <label className="block text-slate-700 font-bold mb-1">Mobile Number</label>
+              <label className="block text-slate-700 font-bold mb-1">
+                Mobile Number
+              </label>
               <input
                 type="text"
                 readOnly
@@ -188,20 +221,30 @@ export function CustomerDueCollection({
             {/* Due Amount & Advanced Amount */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-rose-700 font-bold mb-1">Due Amount</label>
+                <label className="block text-rose-700 font-bold mb-1">
+                  Due Amount
+                </label>
                 <input
                   type="text"
                   readOnly
-                  value={receivableDue ? `${receivableDue.toFixed(2)} TK` : "0.00 TK"}
+                  value={
+                    receivableDue ? `${receivableDue.toFixed(2)} TK` : "0.00 TK"
+                  }
                   className="w-full h-9 px-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-mono font-extrabold cursor-not-allowed text-right"
                 />
               </div>
               <div>
-                <label className="block text-emerald-800 font-bold mb-1">Advanced Amount</label>
+                <label className="block text-emerald-800 font-bold mb-1">
+                  Advanced Amount
+                </label>
                 <input
                   type="text"
                   readOnly
-                  value={advancedAmount ? `${advancedAmount.toFixed(2)} TK` : "0.00 TK"}
+                  value={
+                    advancedAmount
+                      ? `${advancedAmount.toFixed(2)} TK`
+                      : "0.00 TK"
+                  }
                   className="w-full h-9 px-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono font-extrabold cursor-not-allowed text-right"
                 />
               </div>
@@ -226,7 +269,9 @@ export function CustomerDueCollection({
             {/* Payment Method & Target Account */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-800 font-bold mb-1">Payment Method</label>
+                <label className="block text-slate-800 font-bold mb-1">
+                  Payment Method
+                </label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
@@ -239,7 +284,9 @@ export function CustomerDueCollection({
               </div>
 
               <div>
-                <label className="block text-slate-800 font-bold mb-1">Account</label>
+                <label className="block text-slate-800 font-bold mb-1">
+                  Account
+                </label>
                 <select
                   value={account}
                   onChange={(e) => setAccount(e.target.value)}
@@ -256,7 +303,9 @@ export function CustomerDueCollection({
 
             {/* Receivable Due (Display) */}
             <div>
-              <label className="block text-slate-700 font-bold mb-1">Receivable Due</label>
+              <label className="block text-slate-700 font-bold mb-1">
+                Receivable Due
+              </label>
               <input
                 type="text"
                 readOnly
@@ -267,12 +316,16 @@ export function CustomerDueCollection({
 
             {/* Discount Amount */}
             <div>
-              <label className="block text-slate-800 font-bold mb-1">Discount Amount</label>
+              <label className="block text-slate-800 font-bold mb-1">
+                Discount Amount
+              </label>
               <input
                 type="number"
                 min={0}
                 value={discountAmount || ""}
-                onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+                onChange={(e) =>
+                  setDiscountAmount(parseFloat(e.target.value) || 0)
+                }
                 placeholder="0.00"
                 className="w-full h-9 px-3 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono font-bold text-right focus:outline-none focus:border-teal-600"
               />
@@ -296,19 +349,8 @@ export function CustomerDueCollection({
           </div>
         </div>
 
-        {/* Footer controls: Send SMS Checkbox & Submit */}
+        {/* Submit collection */}
         <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <label className="flex items-center gap-2 text-xs text-slate-800 font-bold cursor-pointer">
-            <input
-              type="checkbox"
-              checked={sendSms}
-              onChange={(e) => setSendSms(e.target.checked)}
-              className="accent-teal-700 w-4 h-4"
-            />
-            <MessageSquare className="w-4 h-4 text-teal-700" />
-            <span>Send SMS confirmation to customer</span>
-          </label>
-
           <button
             type="submit"
             disabled={isLoading || !selectedCustomerId || paidAmount <= 0}
@@ -344,7 +386,9 @@ export function CustomerDueCollection({
                     <td className="py-2.5 px-4 font-mono font-bold text-teal-700">
                       {col.collection_number}
                     </td>
-                    <td className="py-2.5 px-4 text-slate-700 font-medium">{col.collection_date}</td>
+                    <td className="py-2.5 px-4 text-slate-700 font-medium">
+                      {col.collection_date}
+                    </td>
                     <td className="py-2.5 px-4 font-bold text-slate-900">
                       {col.customer?.name}
                     </td>

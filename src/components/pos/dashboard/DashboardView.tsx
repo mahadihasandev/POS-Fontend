@@ -1,298 +1,271 @@
 "use client";
-
-import React from "react";
 import {
   TrendingUp,
-  Calendar,
-  DollarSign,
-  Building2,
-  PieChart,
-  MessageSquare,
-  AlertCircle,
+  Wallet,
+  ShoppingBag,
+  AlertTriangle,
   ArrowUpRight,
+  RefreshCw,
 } from "lucide-react";
 import { useGetDashboardQuery } from "@/redux/api/posApi";
-
+import { money } from "@/lib/pos";
+import { QueryState } from "../shared/QueryState";
 export function DashboardView() {
-  const { data } = useGetDashboardQuery();
-
-  const metrics = data?.data?.metrics || {
-    today: { sale: 154644.2, purchase: 0 },
-    yesterday: { sale: 319497.44, purchase: 0 },
-    monthly: { sale: 1368162.47, purchase: 3978.0 },
-    today_ga: { income: 4486.14, expense: 0 },
-    monthly_ga: { income: 51662.13, expense: 33280.0 },
-    liabilities: { payable_due: 6940202.3, receivable_due: 7410288.26 },
-    sms_info: { balance: 2388.08, credit_limit: 0 },
-    available_amount: 3784943.62,
-  };
-
-  const accounts = data?.data?.accounts || [
-    { id: 1, name: "Cash", balance: 28395.62 },
-    { id: 2, name: "Bkash", balance: 0.0 },
-    { id: 3, name: "DATTA & BROTHERS ELECTRICS (UCB)", balance: 806075.0 },
-    { id: 4, name: "DATTA & BROTHERS (UCB)", balance: 1168272.0 },
-    { id: 5, name: "DBBL-123456", balance: 0.0 },
-    { id: 6, name: "MOHITUSH DATTA (UCB)", balance: 0.0 },
-    { id: 7, name: "MOHITUSH DATTA (PUBALI)", balance: 160708.0 },
-    { id: 8, name: "DATTA & BROTHERS ELECTRICS (PUBALI)", balance: 1286043.0 },
-    { id: 9, name: "DATTA & BROTHERS ELECTRIC (MERCANTILE)", balance: 335450.0 },
-  ];
-
+  const { data, isLoading, error, refetch } = useGetDashboardQuery();
+  if (isLoading || error || !data)
+    return <QueryState loading={isLoading} error={error} retry={refetch} />;
+  const { metrics, accounts, recent_sales, stock, sales_trend } = data.data;
+  const max = Math.max(1, ...sales_trend.map((d) => d.sale));
+  const change =
+    metrics.yesterday.sale > 0
+      ? ((metrics.today.sale - metrics.yesterday.sale) /
+          metrics.yesterday.sale) *
+        100
+      : null;
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
-      {/* 8 Metric KPI Cards Grid (Exact replica of Image 5 with modern high-contrast styling) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: TODAY */}
-        <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 border border-indigo-500/40 text-white shadow-xl">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-200">
-              TODAY
-            </span>
-            <div className="p-2 rounded-xl bg-white/10 text-white backdrop-blur-sm">
-              <Calendar className="w-4 h-4" />
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-teal-700 mb-1">
+            Overview / Business health
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Your store, at a glance
+          </h1>
+          <p className="mt-1 text-xs text-slate-600">
+            Sales, cash, and inventory from your saved transactions.
+          </p>
+        </div>
+        <button className="pos-button-secondary" onClick={refetch}>
+          <RefreshCw size={15} />
+          <span className="hidden sm:inline">Refresh</span>
+        </button>
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {[
+          {
+            label: "Sales today",
+            value: metrics.today.sale,
+            detail:
+              change === null
+                ? "No sales recorded yesterday"
+                : `${change >= 0 ? "+" : ""}${change.toFixed(1)}% vs yesterday`,
+            icon: TrendingUp,
+            primary: true,
+          },
+          {
+            label: "Sales this month",
+            value: metrics.monthly.sale,
+            detail: "Current calendar month",
+            icon: ShoppingBag,
+          },
+          {
+            label: "Available funds",
+            value: metrics.available_amount,
+            detail: `${accounts.length} cash & bank accounts`,
+            icon: Wallet,
+          },
+          {
+            label: "Customer dues",
+            value: metrics.liabilities.receivable_due,
+            detail: "Outstanding customer balances",
+            icon: ArrowUpRight,
+          },
+        ].map(({ label, value, detail, icon: Icon, primary }) => (
+          <div
+            key={label}
+            className={`rounded-2xl border p-4 sm:p-5 ${primary ? "bg-teal-900 border-teal-900 text-white" : "panel"}`}
+          >
+            <div className="flex justify-between gap-2">
+              <p
+                className={`text-xs font-medium ${primary ? "text-teal-100" : "text-slate-600"}`}
+              >
+                {label}
+              </p>
+              <Icon
+                size={18}
+                className={primary ? "text-teal-300" : "text-teal-700"}
+              />
             </div>
-          </div>
-          <div className="mt-3 space-y-1">
-            <p className="text-base sm:text-lg font-mono font-extrabold tracking-tight">
-              Sale: {Number(metrics.today.sale).toLocaleString()} TK
+            <p className="mt-4 text-xl sm:text-2xl font-semibold tracking-tight tabular-nums">
+              {money(value)}
+              <span
+                className={`ml-1 text-[10px] font-normal ${primary ? "text-teal-100" : "text-slate-500"}`}
+              >
+                TK
+              </span>
             </p>
-            <p className="text-xs text-indigo-200 font-mono">
-              Purchase: {Number(metrics.today.purchase).toFixed(2)} TK
+            <p
+              className={`mt-2 text-[10px] ${primary ? "text-teal-100" : "text-slate-500"}`}
+            >
+              {detail}
             </p>
           </div>
-          <div className="mt-3 pt-2 border-t border-indigo-400/20 text-[10px] text-indigo-200 flex items-center justify-between">
-            <span>Compared to today</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+        ))}
+      </div>
+      <div className="grid xl:grid-cols-[1.7fr_1fr] gap-5">
+        <div className="panel p-5">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-sm font-semibold">Sales performance</h2>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Last 7 days · invoice revenue excluding prior dues
+              </p>
+            </div>
+            <span className="rounded-full bg-teal-50 px-3 py-1 text-[10px] font-semibold text-teal-800">
+              Live records
+            </span>
+          </div>
+          <div
+            className="mt-8 flex h-44 items-end justify-between gap-3"
+            role="img"
+            aria-label="Sales totals for the last seven days"
+          >
+            {sales_trend.map((day) => (
+              <div
+                key={day.date}
+                className="flex h-full flex-1 flex-col justify-end items-center gap-2"
+              >
+                <span className="text-[9px] text-slate-600 tabular-nums">
+                  {Math.round(day.sale).toLocaleString()}
+                </span>
+                <div
+                  title={`${day.date}: ${money(day.sale)} TK`}
+                  className="w-full max-w-12 rounded-t-md bg-teal-600"
+                  style={{
+                    height: `${Math.max(day.sale > 0 ? 3 : 1, (day.sale / max) * 120)}px`,
+                    opacity: day.sale > 0 ? 1 : 0.2,
+                  }}
+                />
+                <span className="text-[10px] text-slate-500">
+                  {new Date(day.date + "T12:00:00").toLocaleDateString("en", {
+                    weekday: "short",
+                  })}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
-
-        {/* Card 2: YESTERDAY */}
-        <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-rose-500 via-rose-600 to-rose-800 border border-rose-400/40 text-white shadow-xl">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-rose-200">
-              YESTERDAY
+        <div className="panel p-5">
+          <h2 className="text-sm font-semibold">Inventory attention</h2>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Per-product replenishment thresholds
+          </p>
+          <div className="flex items-center gap-4 mt-6 rounded-xl bg-amber-50 p-4">
+            <span className="grid size-11 place-items-center rounded-xl bg-amber-100 text-amber-800">
+              <AlertTriangle size={21} />
             </span>
-            <div className="p-2 rounded-xl bg-white/10 text-white backdrop-blur-sm">
-              <Calendar className="w-4 h-4" />
+            <div>
+              <p className="text-2xl font-semibold text-amber-900">
+                {stock.low}
+              </p>
+              <p className="text-xs text-amber-900">
+                Products need replenishment
+              </p>
             </div>
           </div>
-          <div className="mt-3 space-y-1">
-            <p className="text-base sm:text-lg font-mono font-extrabold tracking-tight">
-              Sale: {Number(metrics.yesterday.sale).toLocaleString()} TK
-            </p>
-            <p className="text-xs text-rose-200 font-mono">
-              Purchase: {Number(metrics.yesterday.purchase).toFixed(2)} TK
-            </p>
+          <div className="mt-4 flex justify-between text-xs text-slate-600">
+            <span>Out of stock</span>
+            <strong className="text-rose-700">{stock.out}</strong>
           </div>
-          <div className="mt-3 pt-2 border-t border-rose-400/20 text-[10px] text-rose-200 flex items-center justify-between">
-            <span>Compared to yesterday</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+          <div className="mt-3 flex justify-between text-xs text-slate-600">
+            <span>Active products</span>
+            <strong className="text-slate-900">{stock.products}</strong>
           </div>
-        </div>
-
-        {/* Card 3: MONTHLY */}
-        <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-emerald-600 via-teal-700 to-teal-900 border border-emerald-500/40 text-white shadow-xl">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-200">
-              MONTHLY
-            </span>
-            <div className="p-2 rounded-xl bg-white/10 text-white backdrop-blur-sm">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 space-y-1">
-            <p className="text-base sm:text-lg font-mono font-extrabold tracking-tight">
-              Sale: {Number(metrics.monthly.sale).toLocaleString()} TK
-            </p>
-            <p className="text-xs text-emerald-200 font-mono">
-              Purchase: {Number(metrics.monthly.purchase).toLocaleString()} TK
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-emerald-400/20 text-[10px] text-emerald-200 flex items-center justify-between">
-            <span>Compared to monthly</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </div>
-        </div>
-
-        {/* Card 4: TODAY G/A */}
-        <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-violet-500 via-violet-600 to-violet-800 border border-violet-400/40 text-white shadow-xl">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-violet-200">
-              TODAY G/A
-            </span>
-            <div className="p-2 rounded-xl bg-white/10 text-white backdrop-blur-sm">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 space-y-1">
-            <p className="text-base sm:text-lg font-mono font-extrabold tracking-tight">
-              Income: {Number(metrics.today_ga.income).toLocaleString()} TK
-            </p>
-            <p className="text-xs text-violet-200 font-mono">
-              Expense: {Number(metrics.today_ga.expense).toFixed(2)} TK
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-violet-400/20 text-[10px] text-violet-200 flex items-center justify-between">
-            <span>Compared to today</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </div>
-        </div>
-
-        {/* Card 5: MONTHLY G/A */}
-        <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-purple-600 via-indigo-700 to-purple-900 border border-purple-400/40 text-white shadow-xl">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-purple-200">
-              MONTHLY G/A
-            </span>
-            <div className="p-2 rounded-xl bg-white/10 text-white backdrop-blur-sm">
-              <PieChart className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 space-y-1">
-            <p className="text-base sm:text-lg font-mono font-extrabold tracking-tight">
-              Income: {Number(metrics.monthly_ga.income).toLocaleString()} TK
-            </p>
-            <p className="text-xs text-purple-200 font-mono">
-              Expense: {Number(metrics.monthly_ga.expense).toLocaleString()} TK
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-purple-400/20 text-[10px] text-purple-200">
-            Net Margin: +{(Number(metrics.monthly_ga.income) - Number(metrics.monthly_ga.expense)).toLocaleString()} TK
-          </div>
-        </div>
-
-        {/* Card 6: LIABILITIES */}
-        <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-rose-600 via-pink-700 to-rose-900 border border-rose-400/40 text-white shadow-xl">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-rose-200">
-              LIABILITIES
-            </span>
-            <div className="p-2 rounded-xl bg-white/10 text-white backdrop-blur-sm">
-              <AlertCircle className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 space-y-1">
-            <p className="text-xs sm:text-sm font-mono font-bold tracking-tight">
-              Payable: {Number(metrics.liabilities.payable_due).toLocaleString()} TK
-            </p>
-            <p className="text-xs sm:text-sm font-mono font-bold text-violet-200">
-              Receivable: {Number(metrics.liabilities.receivable_due).toLocaleString()} TK
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-rose-400/20 text-[10px] text-rose-200">
-            Total Outstanding Exposure
-          </div>
-        </div>
-
-        {/* Card 7: SMS INFO */}
-        <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-lime-600 via-emerald-700 to-green-900 border border-lime-400/40 text-white shadow-xl">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-lime-200">
-              SMS INFO
-            </span>
-            <div className="p-2 rounded-xl bg-white/10 text-white backdrop-blur-sm">
-              <MessageSquare className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 space-y-1">
-            <p className="text-base sm:text-lg font-mono font-extrabold tracking-tight">
-              Balance: ৳{Number(metrics.sms_info.balance).toLocaleString()}
-            </p>
-            <p className="text-xs text-lime-200 font-mono">
-              Credit Limit: {Number(metrics.sms_info.credit_limit).toFixed(2)} TK
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-lime-400/20 text-[10px] text-lime-200">
-            SMS Gateway Active
-          </div>
-        </div>
-
-        {/* Card 8: AVAILABLE AMOUNT */}
-        <div className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-violet-600 via-purple-700 to-violet-900 border border-violet-400/40 text-white shadow-xl">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-violet-200">
-              AVAILABLE AMOUNT
-            </span>
-            <div className="p-2 rounded-xl bg-white/10 text-white backdrop-blur-sm">
-              <Building2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-3 space-y-1">
-            <p className="text-base sm:text-lg font-mono font-extrabold tracking-tight">
-              Balance: {Number(metrics.available_amount).toLocaleString()} TK
-            </p>
-            <p className="text-xs text-violet-200">Across 9 Bank/Cash Ledgers</p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-violet-400/20 text-[10px] text-violet-200">
-            Liquid Capital
+          <div className="mt-4 border-t border-slate-200 pt-4 flex justify-between text-xs">
+            <span className="text-slate-600">Supplier dues</span>
+            <strong className="tabular-nums">
+              {money(metrics.liabilities.payable_due)} TK
+            </strong>
           </div>
         </div>
       </div>
-
-      {/* Available Amount Accounts Breakdown (Exact replica of Image 5) */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-teal-700" />
-            <h3 className="font-bold text-sm text-slate-900">Available Amount Breakdown</h3>
+      <div className="grid xl:grid-cols-[1.7fr_1fr] gap-5">
+        <div className="panel overflow-hidden">
+          <div className="flex justify-between border-b border-slate-200 p-5">
+            <h2 className="text-sm font-semibold">Recent sales</h2>
+            <span className="text-[11px] text-slate-500">
+              Latest 8 completed invoices
+            </span>
           </div>
-          <div className="font-mono font-extrabold text-base text-teal-800">
-            Total: {Number(metrics.available_amount).toLocaleString()} TK
+          <div className="overflow-x-auto">
+            <table className="pos-table">
+              <thead>
+                <tr>
+                  <th>Invoice / Customer</th>
+                  <th>Date</th>
+                  <th>Invoice total</th>
+                  <th>Received</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent_sales.map((sale) => (
+                  <tr key={sale.id}>
+                    <td>
+                      <p className="font-medium text-slate-900">
+                        {sale.customer?.name || "Walk-in customer"}
+                      </p>
+                      <p className="mt-1 text-[9px] font-mono text-slate-500">
+                        {sale.invoice_id}
+                      </p>
+                    </td>
+                    <td className="whitespace-nowrap">
+                      {sale.sale_date.slice(0, 10)}
+                    </td>
+                    <td className="tabular-nums">
+                      {money(
+                        Number(sale.invoice_total) -
+                          Number(sale.discount) -
+                          Number(sale.special_discount),
+                      )}
+                    </td>
+                    <td className="tabular-nums text-teal-800">
+                      {money(sale.paid_amount)}
+                    </td>
+                  </tr>
+                ))}
+                {!recent_sales.length && (
+                  <tr>
+                    <td colSpan={4} className="text-center py-10">
+                      No completed sales yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-
-        <div className="divide-y divide-slate-100 text-xs">
-          {accounts.map((acc, idx) => (
-            <div
-              key={acc.id || idx}
-              className="px-5 py-2.5 flex items-center justify-between hover:bg-slate-50 transition-colors"
-            >
-              <span className="font-bold text-slate-800">{acc.name}</span>
-              <span className="font-mono font-bold text-slate-900 text-right">
-                {Number(acc.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}{" "}
-                <span className="text-[10px] text-slate-500 font-normal">TK</span>
+        <div className="panel p-5">
+          <h2 className="text-sm font-semibold">Cash & bank accounts</h2>
+          <div className="mt-4 space-y-4">
+            {accounts.map((a) => (
+              <div
+                className="flex items-center justify-between gap-3 text-xs"
+                key={a.id}
+              >
+                <span
+                  className="max-w-[180px] truncate text-slate-600"
+                  title={a.name}
+                >
+                  {a.name}
+                </span>
+                <span className="tabular-nums font-semibold">
+                  {money(a.balance)}
+                </span>
+              </div>
+            ))}
+            {!accounts.length && (
+              <p className="text-xs text-slate-500">No accounts configured.</p>
+            )}
+          </div>
+          <div className="mt-5 border-t border-slate-200 pt-4">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-600">Expenses this month</span>
+              <span className="font-semibold">
+                {money(metrics.monthly_ga.expense)} TK
               </span>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Monthly Account Chart (Matching Image 5) */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-teal-700" />
-            <h3 className="font-bold text-sm text-slate-900">Monthly Account Chart</h3>
           </div>
-          <span className="text-xs text-slate-600 font-mono font-semibold">Current Fiscal Year</span>
-        </div>
-
-        {/* Responsive Stylized Trend Graph */}
-        <div className="h-44 w-full pt-4 flex items-end justify-between gap-2 border-b border-slate-200 pb-2">
-          {[
-            { month: "Jan", val: 40, amt: "1.2M" },
-            { month: "Feb", val: 55, amt: "1.5M" },
-            { month: "Mar", val: 48, amt: "1.4M" },
-            { month: "Apr", val: 65, amt: "1.9M" },
-            { month: "May", val: 75, amt: "2.1M" },
-            { month: "Jun", val: 60, amt: "1.8M" },
-            { month: "Jul", val: 70, amt: "2.0M" },
-            { month: "Aug", val: 82, amt: "2.4M" },
-            { month: "Sep", val: 90, amt: "2.8M" },
-            { month: "Oct", val: 95, amt: "3.2M" },
-          ].map((bar, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
-              <div className="text-[9px] font-mono font-bold text-teal-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                {bar.amt}
-              </div>
-              <div
-                style={{ height: `${bar.val}%` }}
-                className="w-full max-w-[28px] rounded-t-md bg-gradient-to-t from-teal-700 to-cyan-500 group-hover:from-teal-600 group-hover:to-cyan-400 transition-all shadow-sm"
-              />
-              <span className="text-[10px] font-bold text-slate-700">{bar.month}</span>
-            </div>
-          ))}
         </div>
       </div>
     </div>

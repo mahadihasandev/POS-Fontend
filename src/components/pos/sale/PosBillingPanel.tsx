@@ -1,13 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  FileCheck,
-  PauseCircle,
-  MessageSquare,
-  Mail,
-  List as ListIcon,
-} from "lucide-react";
+import { FileCheck, PauseCircle, List as ListIcon } from "lucide-react";
 import { FinancialAccount } from "@/redux/api/posApi";
 
 export interface PosBillingPanelProps {
@@ -32,10 +26,8 @@ export interface PosBillingPanelProps {
   dueAmount: number;
   printMode: "pos" | "normal";
   onChangePrintMode: (mode: "pos" | "normal") => void;
-  sendSms: boolean;
-  onToggleSendSms: (val: boolean) => void;
-  emailInvoice: boolean;
-  onToggleEmailInvoice: (val: boolean) => void;
+  canHold: boolean;
+  hasItems: boolean;
   onSaveSale: () => void;
   onHoldSale: () => void;
   onNavigateToList: () => void;
@@ -65,10 +57,8 @@ export function PosBillingPanel({
   dueAmount,
   printMode,
   onChangePrintMode,
-  sendSms,
-  onToggleSendSms,
-  emailInvoice,
-  onToggleEmailInvoice,
+  canHold,
+  hasItems,
   onSaveSale,
   onHoldSale,
   onNavigateToList,
@@ -76,7 +66,8 @@ export function PosBillingPanel({
   receiveInputRef,
 }: PosBillingPanelProps) {
   return (
-    <div className="w-full lg:w-80 bg-white border border-slate-200 rounded-xl p-3.5 space-y-3 shadow-md select-none">
+    <div className="w-full xl:w-[320px] xl:sticky xl:top-0 shrink-0 panel p-5 space-y-4">
+      <h2 className="text-sm font-semibold text-slate-900">Payment summary</h2>
       {/* Financials Grid */}
       <div className="space-y-1.5 text-xs text-slate-800">
         {/* Invoice Total */}
@@ -90,23 +81,31 @@ export function PosBillingPanel({
         {/* Discount & Special Discount */}
         <div className="grid grid-cols-2 gap-2 pt-1">
           <div>
-            <label className="text-[11px] text-slate-700 font-bold block mb-0.5">Discount</label>
+            <label className="text-[11px] text-slate-700 font-bold block mb-0.5">
+              Discount
+            </label>
             <input
               type="number"
               min={0}
               value={discount || ""}
-              onChange={(e) => onChangeDiscount(parseFloat(e.target.value) || 0)}
+              onChange={(e) =>
+                onChangeDiscount(parseFloat(e.target.value) || 0)
+              }
               placeholder="0.00"
               className="w-full h-7 px-2 text-right font-mono font-bold bg-white border border-slate-300 text-slate-900 rounded text-xs focus:outline-none focus:border-teal-600"
             />
           </div>
           <div>
-            <label className="text-[11px] text-slate-700 font-bold block mb-0.5">Special Disc</label>
+            <label className="text-[11px] text-slate-700 font-bold block mb-0.5">
+              Special Disc
+            </label>
             <input
               type="number"
               min={0}
               value={specialDiscount || ""}
-              onChange={(e) => onChangeSpecialDiscount(parseFloat(e.target.value) || 0)}
+              onChange={(e) =>
+                onChangeSpecialDiscount(parseFloat(e.target.value) || 0)
+              }
               placeholder="0.00"
               className="w-full h-7 px-2 text-right font-mono font-bold bg-white border border-slate-300 text-slate-900 rounded text-xs focus:outline-none focus:border-teal-600"
             />
@@ -116,21 +115,29 @@ export function PosBillingPanel({
         {/* Delivery Charge & Delivery Payer */}
         <div className="grid grid-cols-2 gap-2 pt-1">
           <div>
-            <label className="text-[11px] text-slate-700 font-bold block mb-0.5">Delivery Charge</label>
+            <label className="text-[11px] text-slate-700 font-bold block mb-0.5">
+              Delivery Charge
+            </label>
             <input
               type="number"
               min={0}
               value={deliveryCharge || ""}
-              onChange={(e) => onChangeDeliveryCharge(parseFloat(e.target.value) || 0)}
+              onChange={(e) =>
+                onChangeDeliveryCharge(parseFloat(e.target.value) || 0)
+              }
               placeholder="0.00"
               className="w-full h-7 px-2 text-right font-mono font-bold bg-white border border-slate-300 text-slate-900 rounded text-xs focus:outline-none focus:border-teal-600"
             />
           </div>
           <div>
-            <label className="text-[11px] text-slate-700 font-bold block mb-0.5">Delivery Payer</label>
+            <label className="text-[11px] text-slate-700 font-bold block mb-0.5">
+              Delivery Payer
+            </label>
             <select
               value={deliveryPayer}
-              onChange={(e) => onChangeDeliveryPayer(e.target.value as "company" | "customer")}
+              onChange={(e) =>
+                onChangeDeliveryPayer(e.target.value as "company" | "customer")
+              }
               className="w-full h-7 px-1 bg-white border border-slate-300 text-slate-900 font-semibold rounded text-[11px] focus:outline-none focus:border-teal-600"
             >
               <option value="company">Company Pay</option>
@@ -141,13 +148,17 @@ export function PosBillingPanel({
 
         {/* Previous Due & Advanced */}
         <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-          <span className="text-slate-700 text-[11px] font-semibold">Previous Due:</span>
+          <span className="text-slate-700 text-[11px] font-semibold">
+            Previous Due:
+          </span>
           <span className="font-mono text-rose-600 font-bold text-xs">
             {previousDue.toFixed(2)}
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-slate-700 text-[11px] font-semibold">Advanced Amount:</span>
+          <span className="text-slate-700 text-[11px] font-semibold">
+            Advanced Amount:
+          </span>
           <span className="font-mono text-emerald-700 font-bold text-xs">
             {advancedAmount.toFixed(2)}
           </span>
@@ -158,7 +169,7 @@ export function PosBillingPanel({
           <span className="text-xs font-extrabold uppercase tracking-wider text-slate-200">
             Total Payable
           </span>
-          <span className="text-lg font-mono font-extrabold text-violet-300">
+          <span className="text-lg font-mono font-extrabold text-white">
             {totalPayable.toFixed(2)}{" "}
             <span className="text-[10px] text-white">TK</span>
           </span>
@@ -182,25 +193,39 @@ export function PosBillingPanel({
           </select>
         </div>
 
+        <button
+          type="button"
+          className="w-full rounded-lg border border-teal-200 bg-teal-50 py-2 text-xs font-semibold text-teal-800"
+          onClick={() => onChangeReceivedAmount(totalPayable)}
+        >
+          Receive exact amount
+        </button>
+
         {/* Receive Amount [F8] Highlight Box */}
-        <div className="p-2 rounded-lg bg-violet-50 border-2 border-violet-300">
+        <div className="p-2 rounded-lg bg-amber-50 border-2 border-amber-300">
           <div className="flex items-center justify-between mb-1">
-            <label className="text-xs font-extrabold text-violet-900 flex items-center gap-1">
+            <label className="text-xs font-extrabold text-amber-900 flex items-center gap-1">
               <span>Receive</span>
-              <span className="font-mono bg-violet-300 text-slate-950 px-1 rounded text-[10px] font-bold">
+              <span className="font-mono bg-amber-300 text-slate-950 px-1 rounded text-[10px] font-bold">
                 [F8]
               </span>
             </label>
-            <span className="text-[10px] font-bold text-violet-800">Cash Received</span>
+            <span className="text-[10px] font-bold text-amber-900">
+              Cash Received
+            </span>
           </div>
           <input
             ref={receiveInputRef}
             type="number"
             step="0.01"
+            min={0}
+            aria-label="Amount received"
             value={receivedAmount || ""}
-            onChange={(e) => onChangeReceivedAmount(parseFloat(e.target.value) || 0)}
+            onChange={(e) =>
+              onChangeReceivedAmount(parseFloat(e.target.value) || 0)
+            }
             placeholder="0.00"
-            className="w-full h-9 px-3 text-right font-mono font-extrabold text-lg text-slate-950 bg-white border border-violet-300 rounded focus:outline-none focus:border-violet-500 shadow-xs"
+            className="w-full h-9 px-3 text-right font-mono font-extrabold text-lg text-slate-950 bg-white border border-amber-300 rounded focus:outline-none focus:border-amber-500 shadow-xs"
           />
         </div>
 
@@ -211,7 +236,9 @@ export function PosBillingPanel({
               Change Return
             </span>
             <span className="text-[10px] text-emerald-700 font-semibold">
-              {dueAmount > 0 ? `Remaining Due: ${dueAmount.toFixed(2)}` : "Fully Settled"}
+              {dueAmount > 0
+                ? `Remaining Due: ${dueAmount.toFixed(2)}`
+                : "Fully Settled"}
             </span>
           </div>
           <span className="font-mono font-extrabold text-xl text-emerald-700">
@@ -244,31 +271,6 @@ export function PosBillingPanel({
               <span>Normal Print</span>
             </label>
           </div>
-
-          {/* SMS / Email Checkboxes */}
-          <div className="flex items-center justify-between text-xs text-slate-700 font-semibold px-1">
-            <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-950">
-              <input
-                type="checkbox"
-                checked={sendSms}
-                onChange={(e) => onToggleSendSms(e.target.checked)}
-                className="accent-emerald-600"
-              />
-              <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Send SMS</span>
-            </label>
-
-            <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-950">
-              <input
-                type="checkbox"
-                checked={emailInvoice}
-                onChange={(e) => onToggleEmailInvoice(e.target.checked)}
-                className="accent-indigo-600"
-              />
-              <Mail className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Email Invoice</span>
-            </label>
-          </div>
         </div>
 
         {/* Action Buttons */}
@@ -277,12 +279,12 @@ export function PosBillingPanel({
             {/* Save (F10) Primary Button */}
             <button
               type="button"
-              disabled={isSaving || invoiceTotal <= 0}
+              disabled={isSaving || !hasItems}
               onClick={onSaveSale}
               className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <FileCheck className="w-4 h-4" />
-              <span>Save (F10)</span>
+              <span>{isSaving ? "Saving…" : "Complete (F10)"}</span>
             </button>
 
             {/* List Button */}
@@ -299,9 +301,9 @@ export function PosBillingPanel({
           {/* Hold Sale Button */}
           <button
             type="button"
-            disabled={invoiceTotal <= 0}
+            disabled={isSaving || !hasItems || !canHold}
             onClick={onHoldSale}
-            className="w-full py-2 px-3 rounded-lg bg-violet-300 hover:bg-violet-400 active:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+            className="w-full py-2 px-3 rounded-lg bg-amber-300 hover:bg-violet-400 active:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
           >
             <PauseCircle className="w-4 h-4 text-slate-950" />
             <span>Hold Sale</span>

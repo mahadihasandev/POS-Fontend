@@ -1,19 +1,12 @@
 "use client";
+import { downloadCsv, errorMessage } from "@/lib/pos";
 
 import React, { useState } from "react";
-import {
-  Building2,
-  Search,
-  Plus,
-  Upload,
-  Download,
-  DollarSign,
-  Phone,
-  CheckCircle2,
-} from "lucide-react";
+import { Building2, Search, Plus, Upload, Download } from "lucide-react";
 import {
   Supplier,
   useCreateSupplierMutation,
+  useImportSuppliersMutation,
 } from "@/redux/api/posApi";
 import toast from "react-hot-toast";
 
@@ -29,12 +22,15 @@ export function SuppliersView({
   const [activeTab, setActiveTab] = useState<
     "manage" | "dues" | "add" | "upload"
   >("manage");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importSuppliers, { isLoading: isImporting }] =
+    useImportSuppliersMutation();
   const [searchTerm, setSearchTerm] = useState("");
 
   // Add Supplier form state
   const [name, setName] = useState("");
   const [code, setCode] = useState(
-    `SUP-${Math.floor(10 + Math.random() * 90)}`
+    () => `SUP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
   );
   const [phone, setPhone] = useState("");
 
@@ -58,10 +54,10 @@ export function SuppliersView({
       toast.success(`Supplier ${name} registered successfully!`);
       setName("");
       setPhone("");
-      setCode(`SUP-${Math.floor(10 + Math.random() * 90)}`);
+      setCode(`SUP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
       setActiveTab("manage");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to create supplier.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to create supplier."));
     }
   };
 
@@ -69,7 +65,7 @@ export function SuppliersView({
     (s) =>
       s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (s.phone && s.phone.includes(searchTerm))
+      (s.phone && s.phone.includes(searchTerm)),
   );
 
   return (
@@ -85,7 +81,8 @@ export function SuppliersView({
               Suppliers Directory & Vendor Management
             </h1>
             <p className="text-xs text-slate-500 font-medium">
-              Registered Vendor Partners: <strong>{suppliers.length} Companies</strong>
+              Registered Vendor Partners:{" "}
+              <strong>{suppliers.length} Companies</strong>
             </p>
           </div>
         </div>
@@ -173,10 +170,18 @@ export function SuppliersView({
                 <tbody className="divide-y divide-slate-100">
                   {filtered.map((s, idx) => (
                     <tr key={s.id} className="hover:bg-slate-50 transition">
-                      <td className="py-2.5 px-3.5 text-slate-400 font-semibold">{idx + 1}</td>
-                      <td className="py-2.5 px-3.5 font-bold text-slate-900">{s.name}</td>
-                      <td className="py-2.5 px-3.5 font-mono font-bold text-blue-700">{s.code}</td>
-                      <td className="py-2.5 px-3.5 text-slate-700 font-mono">{s.phone || "—"}</td>
+                      <td className="py-2.5 px-3.5 text-slate-400 font-semibold">
+                        {idx + 1}
+                      </td>
+                      <td className="py-2.5 px-3.5 font-bold text-slate-900">
+                        {s.name}
+                      </td>
+                      <td className="py-2.5 px-3.5 font-mono font-bold text-blue-700">
+                        {s.code}
+                      </td>
+                      <td className="py-2.5 px-3.5 text-slate-700 font-mono">
+                        {s.phone || "—"}
+                      </td>
                       <td className="py-2.5 px-3.5 text-center">
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
                           Active Vendor
@@ -224,13 +229,19 @@ export function SuppliersView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {suppliers.map((s, idx) => (
+                {suppliers.map((s) => (
                   <tr key={s.id} className="hover:bg-violet-50/40">
-                    <td className="py-2.5 px-3.5 font-bold text-slate-900">{s.name}</td>
-                    <td className="py-2.5 px-3.5 font-mono text-slate-600">{s.code}</td>
-                    <td className="py-2.5 px-3.5 font-mono text-slate-600">{s.phone || "—"}</td>
+                    <td className="py-2.5 px-3.5 font-bold text-slate-900">
+                      {s.name}
+                    </td>
+                    <td className="py-2.5 px-3.5 font-mono text-slate-600">
+                      {s.code}
+                    </td>
+                    <td className="py-2.5 px-3.5 font-mono text-slate-600">
+                      {s.phone || "—"}
+                    </td>
                     <td className="py-2.5 px-3.5 text-right font-black text-rose-600 text-sm">
-                      ৳{Number(idx === 0 ? 125000 : idx === 1 ? 45000 : 89000).toLocaleString()}
+                      ৳{Number(s.previous_due || 0).toLocaleString()}
                     </td>
                     <td className="py-2.5 px-3.5 text-center">
                       <button
@@ -251,7 +262,10 @@ export function SuppliersView({
 
       {/* Tab 3: Add Supplier Form (Screenshot 11.01.23 AM) */}
       {activeTab === "add" && (
-        <form onSubmit={handleAddSupplier} className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4 max-w-xl">
+        <form
+          onSubmit={handleAddSupplier}
+          className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4 max-w-xl"
+        >
           <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
             Register New Supplier / Vendor
           </h2>
@@ -327,18 +341,33 @@ export function SuppliersView({
             </p>
           </div>
 
-          <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center space-y-3 hover:border-blue-500 transition cursor-pointer">
-            <Upload className="w-10 h-10 text-blue-600 mx-auto" />
-            <div className="text-xs text-slate-600">
-              <span className="font-bold text-blue-700">Click to browse</span> or drag and drop your CSV file here
-            </div>
-            <p className="text-[10px] text-slate-400">Supported format: .csv, .xlsx (max 10MB)</p>
-          </div>
-
+          <label className="block border-2 border-dashed border-slate-300 rounded-xl p-6 space-y-3">
+            <Upload className="w-8 h-8 text-teal-600" />
+            <span className="block text-xs text-slate-600">
+              Select a CSV file (2 MB / 1,000 suppliers maximum). Codes must be
+              unique; all rows are validated before saving.
+            </span>
+            <input
+              type="file"
+              aria-label="Supplier CSV file"
+              accept=".csv"
+              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+              className="text-xs max-w-full"
+            />
+          </label>
           <div className="flex items-center justify-between pt-2">
             <button
               type="button"
-              onClick={() => toast.success("Sample template downloaded (suppliers_template.csv)")}
+              onClick={() =>
+                downloadCsv("suppliers_template", [
+                  {
+                    name: "Example vendor",
+                    code: "SUP-EXAMPLE",
+                    phone: "01700000000",
+                    address: "Dhaka",
+                  },
+                ])
+              }
               className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-blue-700"
             >
               <Download className="w-4 h-4" />
@@ -347,13 +376,23 @@ export function SuppliersView({
 
             <button
               type="button"
-              onClick={() => {
-                toast.success("12 suppliers imported successfully!");
-                setActiveTab("manage");
+              disabled={!importFile || isImporting}
+              onClick={async () => {
+                if (!importFile) return;
+                const body = new FormData();
+                body.append("file", importFile);
+                try {
+                  const result = await importSuppliers(body).unwrap();
+                  toast.success(`${result.data.imported} suppliers imported.`);
+                  setImportFile(null);
+                  setActiveTab("manage");
+                } catch (error) {
+                  toast.error(errorMessage(error));
+                }
               }}
               className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs"
             >
-              Import Data
+              {isImporting ? "Importing…" : "Import Data"}
             </button>
           </div>
         </div>

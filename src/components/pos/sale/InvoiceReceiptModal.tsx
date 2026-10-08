@@ -9,6 +9,7 @@ export interface InvoiceReceiptModalProps {
   onClose: () => void;
   sale: SaleRecord | null;
   outletName: string;
+  printMode?: "pos" | "normal";
 }
 
 export function InvoiceReceiptModal({
@@ -16,6 +17,7 @@ export function InvoiceReceiptModal({
   onClose,
   sale,
   outletName,
+  printMode = "pos",
 }: InvoiceReceiptModalProps) {
   const receiptRef = useRef<HTMLDivElement>(null);
 
@@ -26,7 +28,12 @@ export function InvoiceReceiptModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Sale receipt"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+    >
       <div className="w-full max-w-[95vw] sm:max-w-md bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header Actions */}
         <div className="px-3.5 sm:px-5 py-2.5 sm:py-3 border-b border-slate-200 flex items-center justify-between gap-2 bg-slate-50">
@@ -46,6 +53,7 @@ export function InvoiceReceiptModal({
             <button
               type="button"
               onClick={onClose}
+              aria-label="Close receipt"
               className="p-1 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -57,35 +65,37 @@ export function InvoiceReceiptModal({
         <div className="p-6 overflow-y-auto bg-slate-100/70 flex justify-center">
           <div
             ref={receiptRef}
-            className="w-full max-w-[340px] bg-white text-slate-950 p-5 rounded-lg shadow-md font-mono text-[11px] leading-tight select-text border border-slate-200"
+            className={`${printMode === "normal" ? "receipt-a4" : ""} receipt-print w-full max-w-[340px] bg-white text-slate-950 p-5 rounded-lg shadow-md font-mono text-[11px] leading-tight select-text border border-slate-200`}
           >
             {/* Store Banner */}
             <div className="text-center space-y-1 pb-3 border-b border-dashed border-slate-400">
               <h2 className="font-extrabold text-sm uppercase tracking-wide">
-                {outletName}
+                {sale.outlet?.name || outletName}
               </h2>
-              <p className="text-[10px] text-slate-600">
-                Wholesale & Retail Electrical Goods
-              </p>
-              <p className="text-[10px] text-slate-600">Tel: +880 1711-000001</p>
+              {sale.outlet?.address && <p>{sale.outlet.address}</p>}
+              {sale.outlet?.phone && <p>Tel: {sale.outlet.phone}</p>}
             </div>
 
             {/* Invoice Meta */}
             <div className="py-2.5 border-b border-dashed border-slate-400 space-y-1 text-[10px]">
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-2">
                 <span>INVOICE:</span>
-                <span className="font-bold">{sale.invoice_id}</span>
+                <span className="font-bold text-right break-all max-w-[190px]">
+                  {sale.invoice_id}
+                </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-2">
                 <span>DATE:</span>
-                <span>{sale.sale_date}</span>
+                <span>{sale.sale_date.slice(0, 10)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-2">
                 <span>CUSTOMER:</span>
-                <span className="font-bold">{sale.customer?.name || "Walk-in Customer"}</span>
+                <span className="font-bold text-right break-words max-w-[180px]">
+                  {sale.customer?.name || "Walk-in Customer"}
+                </span>
               </div>
               {sale.user && (
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2">
                   <span>CASHIER:</span>
                   <span>{sale.user.name}</span>
                 </div>
@@ -101,7 +111,7 @@ export function InvoiceReceiptModal({
               </div>
               <div className="space-y-1.5 pt-1.5">
                 {sale.items?.map((it, i) => (
-                  <div key={i} className="flex justify-between">
+                  <div key={i} className="flex justify-between gap-2">
                     <div className="max-w-[140px] truncate">
                       {it.product_name}
                     </div>
@@ -118,32 +128,39 @@ export function InvoiceReceiptModal({
 
             {/* Calculation Totals */}
             <div className="py-2.5 border-b border-dashed border-slate-400 space-y-1">
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-2">
                 <span>INVOICE TOTAL:</span>
                 <span>{Number(sale.invoice_total).toFixed(2)}</span>
               </div>
               {Number(sale.discount) > 0 && (
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2">
                   <span>DISCOUNT:</span>
                   <span>-{Number(sale.discount).toFixed(2)}</span>
                 </div>
               )}
               {Number(sale.special_discount) > 0 && (
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2">
                   <span>SPECIAL DISC:</span>
                   <span>-{Number(sale.special_discount).toFixed(2)}</span>
                 </div>
               )}
-              {Number(sale.delivery_charge) > 0 && (
-                <div className="flex justify-between">
-                  <span>DELIVERY CHARGE:</span>
-                  <span>+{Number(sale.delivery_charge).toFixed(2)}</span>
-                </div>
-              )}
+              {Number(sale.delivery_charge) > 0 &&
+                sale.delivery_payer === "customer" && (
+                  <div className="flex justify-between gap-2">
+                    <span>DELIVERY CHARGE:</span>
+                    <span>+{Number(sale.delivery_charge).toFixed(2)}</span>
+                  </div>
+                )}
               {Number(sale.previous_due) > 0 && (
                 <div className="flex justify-between text-rose-700 font-bold">
                   <span>PREVIOUS DUE:</span>
                   <span>+{Number(sale.previous_due).toFixed(2)}</span>
+                </div>
+              )}
+              {Number(sale.advanced) > 0 && (
+                <div className="flex justify-between gap-2">
+                  <span>ADVANCE USED:</span>
+                  <span>-{Number(sale.advanced).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between text-xs font-extrabold pt-1 border-t border-slate-300">
@@ -172,7 +189,7 @@ export function InvoiceReceiptModal({
                 * {sale.invoice_id} *
               </p>
               <p>Thank you for your business!</p>
-              <p>Goods once sold can only be exchanged within 7 days.</p>
+              <p>Please retain this receipt for returns and exchanges.</p>
             </div>
           </div>
         </div>

@@ -7,7 +7,7 @@ import { sounds } from "@/lib/sound";
 
 export interface PosProductRowProps {
   products: Product[];
-  onAddItem: (product: Product, quantity: number, price: number) => void;
+  onAddItem: (product: Product, quantity: number, price: number) => boolean;
   productInputRef?: React.RefObject<HTMLSelectElement | null>;
 }
 
@@ -16,7 +16,9 @@ export function PosProductRow({
   onAddItem,
   productInputRef,
 }: PosProductRowProps) {
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(
+    null,
+  );
   const [qty, setQty] = useState<number>(1);
   const [unitPrice, setUnitPrice] = useState<number>(0);
 
@@ -43,7 +45,7 @@ export function PosProductRow({
     if (!selectedProduct) return;
     if (qty <= 0) return;
 
-    onAddItem(selectedProduct, qty, unitPrice);
+    if (!onAddItem(selectedProduct, qty, unitPrice)) return;
     sounds.playScanBeep();
     setSelectedProductId(null);
     setQty(1);
@@ -83,7 +85,11 @@ export function PosProductRow({
           <input
             type="text"
             readOnly
-            value={selectedProduct ? `${selectedProduct.available_qty} ${selectedProduct.unit}` : "-"}
+            value={
+              selectedProduct
+                ? `${selectedProduct.available_qty} ${selectedProduct.unit}`
+                : "-"
+            }
             className="w-full h-8.5 px-2.5 rounded-lg bg-slate-100 border border-slate-300 text-teal-800 font-mono font-bold cursor-not-allowed text-center"
           />
         </div>
@@ -110,6 +116,7 @@ export function PosProductRow({
           <input
             type="number"
             step="0.01"
+            min={0}
             value={unitPrice || ""}
             onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
             className="w-full h-8.5 px-2.5 rounded-lg bg-white border border-slate-300 text-slate-900 font-mono font-bold text-center focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition"

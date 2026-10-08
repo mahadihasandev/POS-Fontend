@@ -1,19 +1,11 @@
 "use client";
+import { errorMessage } from "@/lib/pos";
+import { localDate } from "@/lib/pos";
 
 import React, { useState } from "react";
+import { Users, Plus, Trash2, Search } from "lucide-react";
 import {
-  Users,
-  Plus,
-  Trash2,
-  DollarSign,
-  Phone,
-  CheckCircle2,
-  Layers,
-  Search,
-  Receipt,
-  Edit2,
-} from "lucide-react";
-import {
+  FinancialAccount,
   useGetMarketersQuery,
   useCreateMarketerMutation,
   useCreateMarketerPaymentMutation,
@@ -26,7 +18,7 @@ interface SlabRow {
   percentage: number;
 }
 
-export function MarketersView() {
+export function MarketersView({ accounts }: { accounts: FinancialAccount[] }) {
   const [activeSubTab, setActiveSubTab] = useState<"list" | "add">("list");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -40,14 +32,18 @@ export function MarketersView() {
   ]);
 
   // Payment modal state
-  const [payingMarketer, setPayingMarketer] = useState<any | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState<number>(5000);
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [payingMarketer, setPayingMarketer] = useState<
+    import("@/redux/api/posApi").MarketerRecord | null
+  >(null);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState(accounts[0]?.name || "");
   const [paymentNote, setPaymentNote] = useState("");
 
   const { data: marketersData, isLoading, refetch } = useGetMarketersQuery();
-  const [createMarketer, { isLoading: isCreating }] = useCreateMarketerMutation();
-  const [createPayment, { isLoading: isPaying }] = useCreateMarketerPaymentMutation();
+  const [createMarketer, { isLoading: isCreating }] =
+    useCreateMarketerMutation();
+  const [createPayment, { isLoading: isPaying }] =
+    useCreateMarketerPaymentMutation();
 
   const marketers = marketersData?.data || [];
 
@@ -79,8 +75,8 @@ export function MarketersView() {
       setName("");
       setPhone("");
       setActiveSubTab("list");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to create marketer.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to create marketer."));
     }
   };
 
@@ -91,7 +87,7 @@ export function MarketersView() {
     try {
       await createPayment({
         marketer_id: payingMarketer.id,
-        payment_date: new Date().toISOString().split("T")[0],
+        payment_date: localDate(),
         amount: paymentAmount,
         payment_method: paymentMethod,
         note: paymentNote,
@@ -100,14 +96,15 @@ export function MarketersView() {
       toast.success(`Commission paid to ${payingMarketer.name}!`);
       setPayingMarketer(null);
       refetch();
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to pay commission.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to pay commission."));
     }
   };
 
-  const filteredMarketers = marketers.filter((m: any) =>
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (m.phone && m.phone.includes(searchTerm))
+  const filteredMarketers = marketers.filter(
+    (m) =>
+      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (m.phone && m.phone.includes(searchTerm)),
   );
 
   return (
@@ -123,7 +120,8 @@ export function MarketersView() {
               Marketers Management & Commission Slabs
             </h1>
             <p className="text-xs text-slate-500">
-              Manage field sales representatives, tiered target slabs, and payout ledgers
+              Manage field sales representatives, tiered target slabs, and
+              payout ledgers
             </p>
           </div>
         </div>
@@ -180,9 +178,15 @@ export function MarketersView() {
                     <th className="px-3.5 py-2.5">#</th>
                     <th className="px-3.5 py-2.5">Marketer Name</th>
                     <th className="px-3.5 py-2.5">Phone</th>
-                    <th className="px-3.5 py-2.5 text-center">Commission Slabs</th>
-                    <th className="px-3.5 py-2.5 text-right">Total Sales Driven</th>
-                    <th className="px-3.5 py-2.5 text-right">Commission Earned</th>
+                    <th className="px-3.5 py-2.5 text-center">
+                      Commission Slabs
+                    </th>
+                    <th className="px-3.5 py-2.5 text-right">
+                      Total Sales Driven
+                    </th>
+                    <th className="px-3.5 py-2.5 text-right">
+                      Commission Earned
+                    </th>
                     <th className="px-3.5 py-2.5 text-right">Amount Paid</th>
                     <th className="px-3.5 py-2.5 text-right">Balance Due</th>
                     <th className="px-3.5 py-2.5 text-center">Actions</th>
@@ -191,22 +195,34 @@ export function MarketersView() {
                 <tbody className="divide-y divide-slate-100">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-slate-500">
+                      <td
+                        colSpan={9}
+                        className="p-8 text-center text-slate-500"
+                      >
                         Loading marketers...
                       </td>
                     </tr>
                   ) : filteredMarketers.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-slate-400 italic">
+                      <td
+                        colSpan={9}
+                        className="p-8 text-center text-slate-400 italic"
+                      >
                         No marketers registered.
                       </td>
                     </tr>
                   ) : (
-                    filteredMarketers.map((m: any, idx: number) => (
+                    filteredMarketers.map((m, idx) => (
                       <tr key={m.id} className="hover:bg-slate-50 transition">
-                        <td className="px-3.5 py-2.5 text-slate-400 font-semibold">{idx + 1}</td>
-                        <td className="px-3.5 py-2.5 font-bold text-slate-900">{m.name}</td>
-                        <td className="px-3.5 py-2.5 text-slate-600">{m.phone || "—"}</td>
+                        <td className="px-3.5 py-2.5 text-slate-400 font-semibold">
+                          {idx + 1}
+                        </td>
+                        <td className="px-3.5 py-2.5 font-bold text-slate-900">
+                          {m.name}
+                        </td>
+                        <td className="px-3.5 py-2.5 text-slate-600">
+                          {m.phone || "—"}
+                        </td>
                         <td className="px-3.5 py-2.5 text-center">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
                             {m.slabs?.length || 3} Tier Slabs
@@ -216,7 +232,8 @@ export function MarketersView() {
                           ৳{Number(m.total_sales || 184500).toLocaleString()}
                         </td>
                         <td className="px-3.5 py-2.5 text-right font-bold text-emerald-600">
-                          ৳{Number(m.commission_earned || 9225).toLocaleString()}
+                          ৳
+                          {Number(m.commission_earned || 9225).toLocaleString()}
                         </td>
                         <td className="px-3.5 py-2.5 text-right font-bold text-slate-600">
                           ৳{Number(m.amount_paid || 4000).toLocaleString()}
@@ -289,7 +306,8 @@ export function MarketersView() {
                   Tiered Commission Slabs
                 </h3>
                 <p className="text-[11px] text-indigo-700">
-                  Configure performance tier percentages based on sales turnover volume
+                  Configure performance tier percentages based on sales turnover
+                  volume
                 </p>
               </div>
               <button
@@ -316,7 +334,9 @@ export function MarketersView() {
                 <tbody className="divide-y divide-slate-100">
                   {slabs.map((slab, i) => (
                     <tr key={i}>
-                      <td className="p-2 text-center text-slate-400 font-bold">{i + 1}</td>
+                      <td className="p-2 text-center text-slate-400 font-bold">
+                        {i + 1}
+                      </td>
                       <td className="p-2">
                         <input
                           type="number"
@@ -325,9 +345,13 @@ export function MarketersView() {
                             setSlabs(
                               slabs.map((s, idx) =>
                                 idx === i
-                                  ? { ...s, start_amount: parseFloat(e.target.value) || 0 }
-                                  : s
-                              )
+                                  ? {
+                                      ...s,
+                                      start_amount:
+                                        parseFloat(e.target.value) || 0,
+                                    }
+                                  : s,
+                              ),
                             )
                           }
                           className="w-full py-1 px-2 text-xs border border-slate-300 rounded-md font-bold"
@@ -341,9 +365,13 @@ export function MarketersView() {
                             setSlabs(
                               slabs.map((s, idx) =>
                                 idx === i
-                                  ? { ...s, end_amount: parseFloat(e.target.value) || 0 }
-                                  : s
-                              )
+                                  ? {
+                                      ...s,
+                                      end_amount:
+                                        parseFloat(e.target.value) || 0,
+                                    }
+                                  : s,
+                              ),
                             )
                           }
                           className="w-full py-1 px-2 text-xs border border-slate-300 rounded-md font-bold"
@@ -359,20 +387,28 @@ export function MarketersView() {
                               setSlabs(
                                 slabs.map((s, idx) =>
                                   idx === i
-                                    ? { ...s, percentage: parseFloat(e.target.value) || 0 }
-                                    : s
-                                )
+                                    ? {
+                                        ...s,
+                                        percentage:
+                                          parseFloat(e.target.value) || 0,
+                                      }
+                                    : s,
+                                ),
                               )
                             }
                             className="w-full py-1 pr-6 pl-2 text-xs border border-slate-300 rounded-md font-extrabold text-indigo-700"
                           />
-                          <span className="absolute right-2 top-1 text-slate-400 font-bold">%</span>
+                          <span className="absolute right-2 top-1 text-slate-400 font-bold">
+                            %
+                          </span>
                         </div>
                       </td>
                       <td className="p-2 text-center">
                         <button
                           type="button"
-                          onClick={() => setSlabs(slabs.filter((_, idx) => idx !== i))}
+                          onClick={() =>
+                            setSlabs(slabs.filter((_, idx) => idx !== i))
+                          }
                           disabled={slabs.length <= 1}
                           className="text-slate-400 hover:text-rose-600 disabled:opacity-30"
                         >
@@ -437,23 +473,27 @@ export function MarketersView() {
                   min="1"
                   step="0.01"
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
+                  onChange={(e) =>
+                    setPaymentAmount(parseFloat(e.target.value) || 0)
+                  }
                   className="w-full px-3 py-2 text-sm font-black text-emerald-700 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                  Payment Method
+                  Payment Account
                 </label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300"
                 >
-                  <option value="Cash">Cash</option>
-                  <option value="bKash">bKash</option>
-                  <option value="Bank Transfer">Bank Transfer</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.name}>
+                      {account.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

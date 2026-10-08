@@ -1,4 +1,8 @@
 "use client";
+import { errorMessage } from "@/lib/pos";
+import { localDate } from "@/lib/pos";
+
+import { Pagination, QueryState } from "../shared/QueryState";
 
 import React, { useState } from "react";
 import {
@@ -6,12 +10,9 @@ import {
   Warehouse,
   Building2,
   Calendar,
-  Plus,
   Trash2,
   CheckCircle2,
-  Printer,
   History,
-  Search,
 } from "lucide-react";
 import {
   Product,
@@ -38,17 +39,15 @@ export function StockTransferView({
   outlets,
 }: StockTransferViewProps) {
   const [transferType, setTransferType] = useState<"warehouse" | "company">(
-    "warehouse"
+    "warehouse",
   );
   const [sourceName, setSourceName] = useState(
-    outlets[0]?.name || "DATTA & BROTHERS ELECTRICS (Main Hub)"
+    outlets[0]?.name || "DATTA & BROTHERS ELECTRICS (Main Hub)",
   );
   const [destName, setDestName] = useState(
-    outlets[1]?.name || "SMART ACCOUNT CENTRAL (Branch 2)"
+    outlets[1]?.name || "SMART ACCOUNT CENTRAL (Branch 2)",
   );
-  const [transferDate, setTransferDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const [transferDate, setTransferDate] = useState(localDate());
   const [note, setNote] = useState("");
 
   const [items, setItems] = useState<TransferItemRow[]>([
@@ -60,7 +59,12 @@ export function StockTransferView({
     },
   ]);
 
-  const { data: transfersData, isLoading, refetch } = useGetStockTransfersQuery();
+  const [page, setPage] = useState(1);
+  const {
+    data: transfersData,
+    refetch,
+    error,
+  } = useGetStockTransfersQuery({ page });
   const [createTransfer, { isLoading: isSubmitting }] =
     useCreateStockTransferMutation();
 
@@ -70,8 +74,8 @@ export function StockTransferView({
     if (items.some((i) => i.product_id === prod.id)) {
       setItems(
         items.map((i) =>
-          i.product_id === prod.id ? { ...i, quantity: i.quantity + 1 } : i
-        )
+          i.product_id === prod.id ? { ...i, quantity: i.quantity + 1 } : i,
+        ),
       );
     } else {
       setItems([
@@ -113,13 +117,19 @@ export function StockTransferView({
       toast.success("Stock transfer executed successfully!");
       refetch();
       setNote("");
-    } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to execute stock transfer.");
+    } catch (err: unknown) {
+      toast.error(errorMessage(err, "Failed to execute stock transfer."));
     }
   };
 
   return (
     <div className="space-y-4">
+      {error && <QueryState error={error} retry={refetch} />}
+      <Pagination
+        page={page}
+        lastPage={transfersData?.data?.last_page || 1}
+        onChange={setPage}
+      />
       {/* Header bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -131,7 +141,8 @@ export function StockTransferView({
               Stock Transfer Management
             </h1>
             <p className="text-xs text-slate-500">
-              Shift stock between warehouse distribution hubs or sister companies with transit audit
+              Shift stock between warehouse distribution hubs or sister
+              companies with transit audit
             </p>
           </div>
         </div>
@@ -168,13 +179,16 @@ export function StockTransferView({
         <form onSubmit={handleSubmit} className="lg:col-span-7 space-y-4">
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
             <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
-              {transferType === "warehouse" ? "Warehouse Route" : "Company Route"}
+              {transferType === "warehouse"
+                ? "Warehouse Route"
+                : "Company Route"}
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                  Source {transferType === "warehouse" ? "Warehouse" : "Company"}
+                  Source{" "}
+                  {transferType === "warehouse" ? "Warehouse" : "Company"}
                 </label>
                 <div className="relative">
                   <Warehouse className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
@@ -189,7 +203,8 @@ export function StockTransferView({
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                  Destination {transferType === "warehouse" ? "Warehouse" : "Company"}
+                  Destination{" "}
+                  {transferType === "warehouse" ? "Warehouse" : "Company"}
                 </label>
                 <div className="relative">
                   <Building2 className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
@@ -259,8 +274,12 @@ export function StockTransferView({
                 <tbody className="divide-y divide-slate-100">
                   {items.map((it, idx) => (
                     <tr key={it.product_id} className="hover:bg-slate-50">
-                      <td className="p-2.5 text-slate-400 font-semibold">{idx + 1}</td>
-                      <td className="p-2.5 font-medium text-slate-900">{it.product_name}</td>
+                      <td className="p-2.5 text-slate-400 font-semibold">
+                        {idx + 1}
+                      </td>
+                      <td className="p-2.5 font-medium text-slate-900">
+                        {it.product_name}
+                      </td>
                       <td className="p-2.5 text-center text-slate-600 font-bold">
                         {it.stock_available}
                       </td>
@@ -274,9 +293,15 @@ export function StockTransferView({
                             setItems(
                               items.map((i) =>
                                 i.product_id === it.product_id
-                                  ? { ...i, quantity: Math.max(1, parseInt(e.target.value) || 1) }
-                                  : i
-                              )
+                                  ? {
+                                      ...i,
+                                      quantity: Math.max(
+                                        1,
+                                        parseInt(e.target.value) || 1,
+                                      ),
+                                    }
+                                  : i,
+                              ),
                             )
                           }
                           className="w-20 text-center py-1 border border-slate-300 rounded-md font-extrabold text-cyan-800"
@@ -286,7 +311,11 @@ export function StockTransferView({
                         <button
                           type="button"
                           onClick={() =>
-                            setItems(items.filter((i) => i.product_id !== it.product_id))
+                            setItems(
+                              items.filter(
+                                (i) => i.product_id !== it.product_id,
+                              ),
+                            )
                           }
                           className="text-slate-400 hover:text-rose-600 transition"
                         >
@@ -311,7 +340,9 @@ export function StockTransferView({
                 className="px-4 py-2 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white font-extrabold text-xs transition shadow-xs flex items-center gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{isSubmitting ? "Transferring..." : "Complete Transfer"}</span>
+                <span>
+                  {isSubmitting ? "Transferring..." : "Complete Transfer"}
+                </span>
               </button>
             </div>
           </div>
@@ -334,13 +365,15 @@ export function StockTransferView({
                 No stock transfers logged yet.
               </p>
             ) : (
-              transferList.map((trf: any) => (
+              transferList.map((trf) => (
                 <div
                   key={trf.id}
                   className="p-3 rounded-lg border border-slate-200 bg-slate-50/60 text-xs space-y-1 hover:border-cyan-300 transition"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-extrabold text-cyan-800">{trf.transfer_no}</span>
+                    <span className="font-extrabold text-cyan-800">
+                      {trf.transfer_no}
+                    </span>
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
                       {trf.status}
                     </span>
@@ -350,7 +383,9 @@ export function StockTransferView({
                   </div>
                   <div className="flex justify-between text-slate-500 text-[11px] pt-1">
                     <span>Date: {trf.transfer_date}</span>
-                    <span>Units: <strong>{trf.total_items}</strong></span>
+                    <span>
+                      Units: <strong>{trf.total_items}</strong>
+                    </span>
                   </div>
                 </div>
               ))

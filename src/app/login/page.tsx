@@ -12,12 +12,12 @@ import {
   Shield,
   UserCheck,
   Zap,
-  Store,
   CheckCircle2,
   Sparkles,
 } from "lucide-react";
 import { useLoginMutation } from "@/redux/api/authApi";
-import { setCookie } from "cookies-next";
+import { saveSession } from "@/lib/session";
+import { errorMessage } from "@/lib/pos";
 import toast from "react-hot-toast";
 import { sounds } from "@/lib/sound";
 
@@ -41,22 +41,13 @@ export default function LoginPage() {
     try {
       const res = await login({ email, password }).unwrap();
 
-      const token = res.data.access_token || res.data.token || "";
-      if (token) {
-        // Set cookies for authentication
-        const maxAge = rememberMe ? 60 * 60 * 24 * 7 : 60 * 60 * 24; // 7 days or 1 day
-        setCookie("token", token, { maxAge, path: "/" });
-        setCookie("auth_token", token, { maxAge, path: "/" });
-        setCookie("access_token", token, { maxAge, path: "/" });
-        setCookie("user_role", res.data.user?.email.includes("admin") ? "admin" : res.data.user?.email.includes("manager") ? "manager" : "cashier", { maxAge, path: "/" });
-        setCookie("user_name", res.data.user?.name || "User", { maxAge, path: "/" });
-      }
+      saveSession(res.data, rememberMe);
 
       sounds.playSuccessChime();
       toast.success(res.message || `Welcome back, ${res.data.user.name}!`);
       router.push("/");
-    } catch (err: any) {
-      const msg = err?.data?.message || err?.error || "Invalid credentials. Please verify your email and password.";
+    } catch (err: unknown) {
+      const msg = errorMessage(err, "Please verify your email and password.");
       toast.error(msg);
     }
   };
@@ -70,15 +61,15 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 flex flex-col justify-center items-center p-3 sm:p-6 relative overflow-hidden select-none">
       {/* Decorative background glows with light violet and cyan accents */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-700/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-500/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Glassmorphic Container */}
       <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-300">
         {/* Top Header Banner in Blue 500 theme */}
-        <div className="bg-blue-500 px-6 py-6 text-white text-center relative overflow-hidden">
+        <div className="bg-teal-700 px-6 py-6 text-white text-center relative overflow-hidden">
           {/* Subtle gradient pattern */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-500 opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-900 to-teal-700 opacity-90" />
           <div className="relative z-10 flex flex-col items-center">
             <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shadow-inner mb-3 border border-white/30">
               <Layers className="w-7 h-7 text-white stroke-[2.5]" />
@@ -134,9 +125,6 @@ export default function LoginPage() {
                 <label className="block text-xs font-bold text-slate-700">
                   Password
                 </label>
-                <span className="text-[11px] text-blue-600 font-medium cursor-pointer hover:underline">
-                  Default: password123
-                </span>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -178,7 +166,7 @@ export default function LoginPage() {
               </label>
 
               <span className="text-[11px] text-slate-400 font-mono">
-                Port 8000 (TLS/AES-256)
+                Staff access
               </span>
             </div>
 
@@ -186,7 +174,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-extrabold text-xs sm:text-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-11 bg-teal-700 hover:bg-teal-800 active:bg-blue-700 text-white font-extrabold text-xs sm:text-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
@@ -203,49 +191,66 @@ export default function LoginPage() {
           </form>
 
           {/* Quick Demo Switcher Section (With light violet styling) */}
-          <div className="pt-2 border-t border-slate-200 space-y-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block text-center">
-              Quick 1-Click Demo Accounts
-            </span>
+          {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && (
+            <div className="pt-2 border-t border-slate-200 space-y-2">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block text-center">
+                Quick 1-Click Demo Accounts
+              </span>
 
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDemoFill("admin@smartpos.com", "Admin")}
-                className="p-2 rounded-lg border border-violet-200 bg-violet-50 hover:bg-violet-100 hover:border-violet-300 text-violet-900 transition flex flex-col items-center justify-center gap-1 cursor-pointer"
-              >
-                <Shield className="w-4 h-4 text-violet-700" />
-                <span className="text-[11px] font-bold">Admin</span>
-                <span className="text-[9px] text-violet-700 font-mono">Full Access</span>
-              </button>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDemoFill("admin@smartpos.com", "Admin")}
+                  className="p-2 rounded-lg border border-violet-200 bg-violet-50 hover:bg-violet-100 hover:border-violet-300 text-violet-900 transition flex flex-col items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Shield className="w-4 h-4 text-violet-700" />
+                  <span className="text-[11px] font-bold">Admin</span>
+                  <span className="text-[9px] text-violet-700 font-mono">
+                    Full Access
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleDemoFill("manager@smartpos.com", "Manager")}
-                className="p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-slate-800 transition flex flex-col items-center justify-center gap-1 cursor-pointer"
-              >
-                <UserCheck className="w-4 h-4 text-indigo-600" />
-                <span className="text-[11px] font-bold">Manager</span>
-                <span className="text-[9px] text-slate-500 font-mono">Operations</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDemoFill("manager@smartpos.com", "Manager")
+                  }
+                  className="p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-slate-800 transition flex flex-col items-center justify-center gap-1 cursor-pointer"
+                >
+                  <UserCheck className="w-4 h-4 text-indigo-600" />
+                  <span className="text-[11px] font-bold">Manager</span>
+                  <span className="text-[9px] text-slate-500 font-mono">
+                    Operations
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleDemoFill("cashier@smartpos.com", "Cashier")}
-                className="p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-slate-800 transition flex flex-col items-center justify-center gap-1 cursor-pointer"
-              >
-                <Zap className="w-4 h-4 text-teal-600" />
-                <span className="text-[11px] font-bold">Cashier</span>
-                <span className="text-[9px] text-slate-500 font-mono">Sales Desk</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleDemoFill("cashier@smartpos.com", "Cashier")
+                  }
+                  className="p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-slate-800 transition flex flex-col items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Zap className="w-4 h-4 text-teal-600" />
+                  <span className="text-[11px] font-bold">Cashier</span>
+                  <span className="text-[9px] text-slate-500 font-mono">
+                    Sales Desk
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Registration Policy Notice */}
           <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-start gap-2 text-[11px] text-slate-600">
             <Lock className="w-3.5 h-3.5 text-violet-600 shrink-0 mt-0.5" />
             <p>
-              <strong className="font-semibold text-slate-800">Restricted Access:</strong> Staff and cashier accounts cannot self-register publicly. New accounts are provisioned exclusively from inside the web application by authenticated administrators.
+              <strong className="font-semibold text-slate-800">
+                Restricted Access:
+              </strong>{" "}
+              Staff and cashier accounts cannot self-register publicly. New
+              accounts are provisioned exclusively from inside the web
+              application by authenticated administrators.
             </p>
           </div>
         </div>
@@ -254,9 +259,9 @@ export default function LoginPage() {
         <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
           <div className="flex items-center gap-1.5 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Dual-Layer Encrypted JWT</span>
+            <span>Smart Account POS</span>
           </div>
-          <span className="font-mono text-slate-400">v2.4.0 Production</span>
+          <span className="font-mono text-slate-400">Staff workspace</span>
         </div>
       </div>
     </div>
