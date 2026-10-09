@@ -34,6 +34,7 @@ import { MarketersView } from "@/components/pos/marketers/MarketersView";
 import { StockTransferView } from "@/components/pos/transfers/StockTransferView";
 import { ReportsView } from "@/components/pos/reports/ReportsView";
 import { PurchaseReturnView } from "@/components/pos/purchases/PurchaseReturnView";
+import { CrmView } from "@/components/pos/crm/CrmView";
 
 import {
   useGetBootstrapDataQuery,
@@ -420,6 +421,9 @@ export default function PosApp() {
                 {viewTab === "rbac" && (
                   <DesignationManager canManageUsers={can("users.manage")} />
                 )}
+
+                {/* CRM & Social Outreach Channel (WhatsApp, Facebook, Phone) */}
+                {viewTab === "crm" && <CrmView customers={customers} />}
               </>
             )}
           </main>

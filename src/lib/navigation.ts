@@ -21,6 +21,7 @@ export const tabPermissions: Record<string, string> = {
   expenses: "accounts.expenses",
   reports: "reports.view",
   rbac: "designations.manage",
+  crm: "sales.view",
 };
 export function canOpenTab(tab: string, permissions: string[], admin: boolean) {
   return (
@@ -52,4 +53,5 @@ export const workspacePages = [
   { id: "expenses", label: "Expense vouchers", group: "Finance" },
   { id: "reports", label: "Reports & audit", group: "Finance" },
   { id: "rbac", label: "Staff & permissions", group: "Administration" },
+  { id: "crm", label: "CRM & Social Channels", group: "CRM" },
 ];

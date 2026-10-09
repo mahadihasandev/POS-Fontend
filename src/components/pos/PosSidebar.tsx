@@ -12,9 +12,17 @@ import {
   ChevronDown,
   X,
   ArrowUpRight,
+  MessageSquare,
 } from "lucide-react";
 import { canOpenTab } from "@/lib/navigation";
 const groups = [
+  {
+    title: "CRM & Social",
+    icon: MessageSquare,
+    items: [
+      ["crm", "CRM & Social Outreach"],
+    ],
+  },
   {
     title: "Sales & checkout",
     icon: ShoppingCart,
