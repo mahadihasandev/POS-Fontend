@@ -16,7 +16,7 @@ const getBaseUrl = (): string => {
   if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  return "http://localhost:8000/api/v1";
+  return "https://pos-backend-xnf0.onrender.com/api/v1";
 };
 
 /**
