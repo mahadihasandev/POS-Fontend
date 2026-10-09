@@ -1,6 +1,7 @@
 "use client";
 
 import { Pagination, QueryState } from "../shared/QueryState";
+import { ModernSpinner } from "@/components/ui/ModernSpinner";
 
 import React, { useState } from "react";
 import { RotateCcw, Search, Printer, Plus, RefreshCw } from "lucide-react";
@@ -133,11 +134,13 @@ export function SaleExchangeListView({
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td
-                    colSpan={10}
-                    className="p-8 text-center text-slate-500 font-medium"
-                  >
-                    Loading sale return history...
+                  <td colSpan={10} className="p-8 text-center">
+                    <div className="flex items-center justify-center gap-3">
+                      <ModernSpinner size="sm" />
+                      <span className="text-xs font-medium text-slate-500">
+                        Loading sale return history…
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ) : list.length === 0 ? (

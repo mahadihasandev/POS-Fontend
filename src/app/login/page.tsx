@@ -16,6 +16,7 @@ import {
 import { useLoginMutation } from "@/redux/api/authApi";
 import { saveSession } from "@/lib/session";
 import { errorMessage } from "@/lib/pos";
+import { ModernSpinner } from "@/components/ui/ModernSpinner";
 import toast from "react-hot-toast";
 
 export default function LoginPage() {
@@ -175,10 +176,19 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="pos-button !min-h-12 w-full"
+              className="pos-button !min-h-12 w-full gap-2 text-sm shadow-md"
             >
-              {isLoading ? "Signing in…" : "Sign in to workspace"}
-              <ArrowRight size={17} />
+              {isLoading ? (
+                <>
+                  <ModernSpinner size="xs" glow={false} />
+                  <span>Signing in to workspace…</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign in to workspace</span>
+                  <ArrowRight size={17} />
+                </>
+              )}
             </button>
           </form>
           {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && (

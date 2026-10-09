@@ -8,6 +8,7 @@ import { WorkspaceSearch } from "@/components/pos/shared/WorkspaceSearch";
 import { useGetMeQuery } from "@/redux/api/authApi";
 import { canOpenTab, workspacePages } from "@/lib/navigation";
 import { QueryState } from "@/components/pos/shared/QueryState";
+import { FullPageLoader } from "@/components/ui/FullPageLoader";
 import { ExpensesView } from "@/components/pos/accounts/ExpensesView";
 import { WastagesView } from "@/components/pos/inventory/WastagesView";
 import type { SaleRecord } from "@/redux/api/posApi";
@@ -140,13 +141,15 @@ export default function PosApp() {
 
   if (hasToken === null || profileLoading || isUnauthorized)
     return (
-      <div className="p-8">
-        <QueryState loading />
-      </div>
+      <FullPageLoader
+        title="Smart Account"
+        message="Loading your workspace..."
+        subtitle="Verifying session and synchronizing cloud database"
+      />
     );
   if (profileError)
     return (
-      <div className="p-8">
+      <div className="min-h-dvh flex items-center justify-center p-6 bg-slate-100">
         <QueryState error={profileError} retry={refetchProfile} />
       </div>
     );

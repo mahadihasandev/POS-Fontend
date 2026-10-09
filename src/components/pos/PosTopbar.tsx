@@ -11,6 +11,7 @@ import {
   VolumeX,
   LogOut,
   Store,
+  MessageSquare,
 } from "lucide-react";
 import { workspacePages } from "@/lib/navigation";
 import { sounds } from "@/lib/sound";
@@ -133,6 +134,19 @@ export function PosTopbar({
             New sale
           </button>
         )}
+        <button
+          onClick={() => onSelectTab("crm")}
+          className={`hidden sm:flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-semibold transition ${
+            activeTab === "crm"
+              ? "bg-teal-500/20 border-teal-400 text-teal-200"
+              : "border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:border-slate-500"
+          }`}
+          aria-label="Open CRM & Social Outreach"
+          title="Open CRM & Social (WhatsApp, Facebook, Phone)"
+        >
+          <MessageSquare size={14} className="text-emerald-400" />
+          <span>CRM</span>
+        </button>
         <button
           aria-label={muted ? "Enable sounds" : "Mute sounds"}
           className="hidden md:grid icon-button"

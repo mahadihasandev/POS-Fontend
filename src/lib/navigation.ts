@@ -24,6 +24,7 @@ export const tabPermissions: Record<string, string> = {
   crm: "sales.view",
 };
 export function canOpenTab(tab: string, permissions: string[], admin: boolean) {
+  if (tab === "crm") return true;
   return (
     Boolean(tabPermissions[tab]) &&
     (admin || permissions.includes(tabPermissions[tab]))

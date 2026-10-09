@@ -1,6 +1,7 @@
 "use client";
 
 import { Pagination, QueryState } from "../shared/QueryState";
+import { ModernSpinner } from "@/components/ui/ModernSpinner";
 
 import React, { useState } from "react";
 import { Search, Plus, Printer, Eye, FileText } from "lucide-react";
@@ -177,11 +178,13 @@ export function SalesListView({
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td
-                    colSpan={11}
-                    className="py-8 text-center text-slate-500 font-medium"
-                  >
-                    Loading sales records...
+                  <td colSpan={11} className="py-8 text-center">
+                    <div className="flex items-center justify-center gap-3">
+                      <ModernSpinner size="sm" />
+                      <span className="text-xs font-medium text-slate-500">
+                        Loading sales records…
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ) : sales.length === 0 ? (

@@ -2,6 +2,7 @@
 import {
   LayoutDashboard,
   ShoppingCart,
+  MessageSquare,
   Package,
   Menu,
   Pause,
@@ -32,6 +33,7 @@ export function PosMobileBottomNav({
       {[
         ["dashboard", "Overview", LayoutDashboard],
         ["pos-new", "Sell", ShoppingCart],
+        ["crm", "CRM", MessageSquare],
         ["products", "Stock", Package],
       ].map(
         ([id, name, Icon]) =>

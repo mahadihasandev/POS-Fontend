@@ -148,6 +148,28 @@ export function PosSidebar({
               Dashboard
             </button>
           )}
+          {allowed("crm") && (
+            <button
+              aria-current={activeTab === "crm" ? "page" : undefined}
+              className={`${itemClass("crm")} flex items-center justify-between group`}
+              onClick={() => go("crm")}
+            >
+              <div className="flex gap-3 items-center">
+                <MessageSquare
+                  size={17}
+                  className={
+                    activeTab === "crm"
+                      ? "text-teal-300"
+                      : "text-emerald-400 group-hover:scale-110 transition-transform"
+                  }
+                />
+                <span className="font-medium">CRM & Social</span>
+              </div>
+              <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                New
+              </span>
+            </button>
+          )}
           <p className="px-3 pt-5 pb-2 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-400">
             Operations
           </p>

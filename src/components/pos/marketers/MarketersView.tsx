@@ -4,6 +4,7 @@ import { localDate } from "@/lib/pos";
 
 import React, { useState } from "react";
 import { Users, Plus, Trash2, Search } from "lucide-react";
+import { ModernSpinner } from "@/components/ui/ModernSpinner";
 import {
   FinancialAccount,
   useGetMarketersQuery,
@@ -195,11 +196,13 @@ export function MarketersView({ accounts }: { accounts: FinancialAccount[] }) {
                 <tbody className="divide-y divide-slate-100">
                   {isLoading ? (
                     <tr>
-                      <td
-                        colSpan={9}
-                        className="p-8 text-center text-slate-500"
-                      >
-                        Loading marketers...
+                      <td colSpan={9} className="p-8 text-center">
+                        <div className="flex items-center justify-center gap-3">
+                          <ModernSpinner size="sm" />
+                          <span className="text-xs font-medium text-slate-500">
+                            Loading marketers…
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   ) : filteredMarketers.length === 0 ? (
