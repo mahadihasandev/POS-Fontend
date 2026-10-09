@@ -13,10 +13,21 @@ import { saveSession, clearSession } from "@/lib/session";
  * with fallback to local Laravel backend API v1 endpoint.
  */
 const getBaseUrl = (): string => {
+  let url = "https://pos-backend-zxq1.vercel.app/api/v1";
   if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
+    url = process.env.NEXT_PUBLIC_API_URL.trim();
   }
-  return "https://pos-backend-zxq1.vercel.app/api/v1";
+  url = url.replace(/\/+$/, "");
+  if (!url.endsWith("/api/v1")) {
+    if (url.endsWith("/v1")) {
+      url = url.replace(/\/v1$/, "/api/v1");
+    } else if (url.endsWith("/api")) {
+      url = `${url}/v1`;
+    } else {
+      url = `${url}/api/v1`;
+    }
+  }
+  return url;
 };
 
 /**
