@@ -17,9 +17,13 @@ export function Modal({
     const panel = ref.current;
     const focusable = () =>
       panel?.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), input, select, textarea, [tabindex="0"]',
+        'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]',
       );
-    focusable()?.[0]?.focus();
+    (
+      panel?.querySelector<HTMLElement>(
+        "input:not(:disabled), select:not(:disabled), textarea:not(:disabled)",
+      ) || focusable()?.[0]
+    )?.focus();
     const handler = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
       if (event.key === "Tab") {

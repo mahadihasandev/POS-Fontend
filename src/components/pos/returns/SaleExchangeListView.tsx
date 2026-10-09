@@ -43,11 +43,11 @@ export function SaleExchangeListView({
       {/* Top Header */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
             <RotateCcw className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-base font-semibold text-slate-900 tracking-tight">
               Sale Return & Exchange List
             </h1>
             <p className="text-xs text-slate-500">
@@ -89,7 +89,7 @@ export function SaleExchangeListView({
               setPage(1);
               setSearchTerm(e.target.value);
             }}
-            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
           />
         </div>
 
@@ -158,7 +158,7 @@ export function SaleExchangeListView({
                     <td className="px-3.5 py-2.5 text-slate-400 font-semibold">
                       {idx + 1}
                     </td>
-                    <td className="px-3.5 py-2.5 font-bold text-indigo-700">
+                    <td className="px-3.5 py-2.5 font-bold text-teal-700">
                       {r.return_no}
                     </td>
                     <td className="px-3.5 py-2.5 text-slate-600">
@@ -176,7 +176,7 @@ export function SaleExchangeListView({
                     <td className="px-3.5 py-2.5 text-right font-bold text-emerald-600">
                       ৳{Number(r.exchange_amount).toLocaleString()}
                     </td>
-                    <td className="px-3.5 py-2.5 text-right font-extrabold text-slate-800">
+                    <td className="px-3.5 py-2.5 text-right font-semibold text-slate-800">
                       ৳{Number(r.net_adjustment).toLocaleString()}
                     </td>
                     <td className="px-3.5 py-2.5 text-slate-500 max-w-xs truncate">
@@ -187,7 +187,7 @@ export function SaleExchangeListView({
                         <button
                           type="button"
                           onClick={() => window.print()}
-                          className="p-1 rounded-md text-slate-600 hover:text-indigo-600 hover:bg-indigo-50"
+                          className="p-1 rounded-md text-slate-600 hover:text-teal-600 hover:bg-teal-50"
                           title="Print Return Slip"
                         >
                           <Printer className="w-3.5 h-3.5" />

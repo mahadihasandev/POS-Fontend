@@ -220,7 +220,7 @@ export function SalesListView({
                     <td className="py-2.5 px-3 text-slate-500">
                       {sale.marketer?.name || "-"}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-extrabold text-slate-900">
+                    <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-900">
                       {Number(sale.payable_amount).toFixed(2)}
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-emerald-700 font-bold">

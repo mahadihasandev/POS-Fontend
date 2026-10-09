@@ -60,7 +60,7 @@ export function PosProductRow({
           <label className="text-slate-900 font-bold mb-1 flex items-center gap-1">
             <Package className="w-3.5 h-3.5 text-teal-700" />
             <span>Product Name</span>
-            <span className="text-teal-700 font-mono font-extrabold">[F3]</span>
+            <span className="text-teal-700 font-mono font-semibold">[F3]</span>
           </label>
           <select
             ref={productInputRef}
@@ -129,7 +129,7 @@ export function PosProductRow({
             type="button"
             disabled={!selectedProduct}
             onClick={handleAdd}
-            className="w-full h-8.5 rounded-lg bg-teal-700 hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+            className="w-full h-8.5 rounded-lg bg-teal-700 hover:bg-teal-600 active:bg-teal-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
             title="Add Product to Cart"
           >
             <Plus className="w-4 h-4 stroke-[3]" />

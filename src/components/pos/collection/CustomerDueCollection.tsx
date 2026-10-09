@@ -92,8 +92,8 @@ export function CustomerDueCollection({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-cyan-800 px-5 py-3 rounded-t-xl border-b border-teal-900/20 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-2 text-white font-extrabold text-base">
+      <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-teal-800 px-5 py-3 rounded-t-xl border-b border-teal-900/20 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-2 text-white font-semibold text-base">
           <Plus className="w-5 h-5 text-teal-200 stroke-[3]" />
           <span>
             {collectionMode === "supplier_wise"
@@ -135,9 +135,9 @@ export function CustomerDueCollection({
         className="bg-white border border-slate-200 rounded-b-xl p-5 sm:p-6 shadow-sm space-y-5"
       >
         {collectionMode === "supplier_wise" && (
-          <div className="p-3 bg-violet-50 border border-violet-200 rounded-lg flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-violet-900">
+              <span className="font-semibold text-teal-900">
                 Select Supplier Brand:
               </span>
               <select
@@ -147,7 +147,7 @@ export function CustomerDueCollection({
                     e.target.value ? Number(e.target.value) : "",
                   )
                 }
-                className="h-8 px-2.5 rounded-md border border-violet-300 font-bold text-violet-950 bg-white"
+                className="h-8 px-2.5 rounded-md border border-teal-300 font-bold text-teal-950 bg-white"
               >
                 <option value="">-- All Suppliers / General Brand --</option>
                 {suppliers.map((s) => (
@@ -157,7 +157,7 @@ export function CustomerDueCollection({
                 ))}
               </select>
             </div>
-            <span className="text-[11px] font-semibold text-violet-700">
+            <span className="text-[11px] font-semibold text-teal-700">
               Receipt will credit specific supplier receivables ledger
             </span>
           </div>
@@ -230,7 +230,7 @@ export function CustomerDueCollection({
                   value={
                     receivableDue ? `${receivableDue.toFixed(2)} TK` : "0.00 TK"
                   }
-                  className="w-full h-9 px-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-mono font-extrabold cursor-not-allowed text-right"
+                  className="w-full h-9 px-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-mono font-semibold cursor-not-allowed text-right"
                 />
               </div>
               <div>
@@ -245,7 +245,7 @@ export function CustomerDueCollection({
                       ? `${advancedAmount.toFixed(2)} TK`
                       : "0.00 TK"
                   }
-                  className="w-full h-9 px-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono font-extrabold cursor-not-allowed text-right"
+                  className="w-full h-9 px-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono font-semibold cursor-not-allowed text-right"
                 />
               </div>
             </div>
@@ -333,7 +333,7 @@ export function CustomerDueCollection({
 
             {/* Paid Amount */}
             <div>
-              <label className="block text-emerald-800 font-extrabold mb-1">
+              <label className="block text-emerald-800 font-semibold mb-1">
                 Paid Amount <span className="text-rose-600">*</span>
               </label>
               <input
@@ -343,7 +343,7 @@ export function CustomerDueCollection({
                 value={paidAmount || ""}
                 onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
                 placeholder="Enter collected cash/bank amount..."
-                className="w-full h-10 px-3 rounded-lg bg-emerald-50/50 border-2 border-emerald-500 text-emerald-900 font-mono font-extrabold text-base text-right focus:outline-none focus:border-emerald-600 shadow-xs"
+                className="w-full h-10 px-3 rounded-lg bg-emerald-50/50 border-2 border-emerald-500 text-emerald-900 font-mono font-semibold text-base text-right focus:outline-none focus:border-emerald-600 shadow-xs"
               />
             </div>
           </div>
@@ -354,7 +354,7 @@ export function CustomerDueCollection({
           <button
             type="submit"
             disabled={isLoading || !selectedCustomerId || paidAmount <= 0}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-teal-700 hover:bg-teal-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition cursor-pointer"
           >
             <CheckCircle2 className="w-4 h-4" />
             <span>{isLoading ? "Recording..." : "Submit Collection"}</span>
@@ -398,7 +398,7 @@ export function CustomerDueCollection({
                     <td className="py-2.5 px-4 text-right font-mono text-slate-600 font-medium">
                       {Number(col.discount_amount).toFixed(2)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-mono font-extrabold text-emerald-700">
+                    <td className="py-2.5 px-4 text-right font-mono font-semibold text-emerald-700">
                       {Number(col.paid_amount).toFixed(2)} TK
                     </td>
                   </tr>

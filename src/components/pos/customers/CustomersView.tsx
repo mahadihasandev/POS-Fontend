@@ -100,16 +100,16 @@ export function CustomersView({
       {/* Top Header */}
       <div className="bg-white border border-slate-200 p-4 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-base font-semibold text-slate-900 tracking-tight">
               Customer Management & Accounts
             </h1>
             <p className="text-xs text-slate-500 font-medium">
               Market Total Outstanding:{" "}
-              <strong className="text-rose-600 font-black">
+              <strong className="text-rose-600 font-bold">
                 ৳{totalReceivable.toLocaleString()}
               </strong>
             </p>
@@ -227,10 +227,10 @@ export function CustomersView({
                       <td className="py-2.5 px-3.5 text-slate-700 font-mono">
                         {c.phone || "—"}
                       </td>
-                      <td className="py-2.5 px-3.5 text-right font-extrabold text-rose-600">
+                      <td className="py-2.5 px-3.5 text-right font-semibold text-rose-600">
                         ৳{Number(c.previous_due).toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-3.5 text-right font-extrabold text-emerald-600">
+                      <td className="py-2.5 px-3.5 text-right font-semibold text-emerald-600">
                         ৳{Number(c.advanced_amount).toLocaleString()}
                       </td>
                       <td className="py-2.5 px-3.5 text-center">
@@ -259,7 +259,7 @@ export function CustomersView({
               Filtered Due Accounts ({duesOnly.length} customers with
               outstanding balances)
             </span>
-            <span className="font-black text-sm text-rose-700">
+            <span className="font-bold text-sm text-rose-700">
               Total: ৳
               {duesOnly
                 .reduce((s, c) => s + Number(c.previous_due), 0)
@@ -294,7 +294,7 @@ export function CustomersView({
                     <td className="py-2.5 px-3.5 font-mono text-slate-600">
                       {c.phone || "—"}
                     </td>
-                    <td className="py-2.5 px-3.5 text-right font-black text-rose-600 text-sm">
+                    <td className="py-2.5 px-3.5 text-right font-bold text-rose-600 text-sm">
                       ৳{Number(c.previous_due).toLocaleString()}
                     </td>
                     <td className="py-2.5 px-3.5 text-center">
@@ -320,7 +320,7 @@ export function CustomersView({
           onSubmit={handleAddCustomer}
           className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4 max-w-2xl"
         >
-          <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
             Register New Customer
           </h2>
 
@@ -416,7 +416,7 @@ export function CustomersView({
             <button
               type="submit"
               disabled={isCreating}
-              className="px-5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-extrabold transition shadow-xs"
+              className="px-5 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold transition shadow-xs"
             >
               {isCreating ? "Saving..." : "Save Customer"}
             </button>
@@ -428,7 +428,7 @@ export function CustomersView({
       {activeTab === "upload" && (
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs max-w-xl space-y-4">
           <div>
-            <h2 className="text-sm font-extrabold text-slate-900">
+            <h2 className="text-sm font-semibold text-slate-900">
               Bulk Customer CSV Import
             </h2>
             <p className="text-xs text-slate-500">
@@ -502,7 +502,7 @@ export function CustomersView({
         <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5 space-y-4">
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <div>
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700">
                 Customer Territorial Zones & Areas
               </h2>
               <p className="text-xs text-slate-500">

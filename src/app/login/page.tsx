@@ -1,25 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Layers,
-  Lock,
-  Mail,
+  LockKeyhole,
   Eye,
   EyeOff,
   ArrowRight,
-  Shield,
-  UserCheck,
-  Zap,
-  CheckCircle2,
-  Sparkles,
+  ShieldCheck,
+  Package,
+  BarChart3,
+  ShoppingBag,
 } from "lucide-react";
 import { useLoginMutation } from "@/redux/api/authApi";
 import { saveSession } from "@/lib/session";
 import { errorMessage } from "@/lib/pos";
 import toast from "react-hot-toast";
-import { sounds } from "@/lib/sound";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,243 +24,194 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-
   const [login, { isLoading }] = useLoginMutation();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email.trim() || !password.trim()) {
-      toast.error("Please enter both email and password.");
-      return;
-    }
-
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (isLoading) return;
     try {
-      const res = await login({ email, password }).unwrap();
-
-      saveSession(res.data, rememberMe);
-
-      sounds.playSuccessChime();
-      toast.success(res.message || `Welcome back, ${res.data.user.name}!`);
-      router.push("/");
-    } catch (err: unknown) {
-      const msg = errorMessage(err, "Please verify your email and password.");
-      toast.error(msg);
+      const response = await login({ email: email.trim(), password }).unwrap();
+      saveSession(response.data, rememberMe);
+      toast.success(`Welcome back, ${response.data.user.name}.`);
+      router.replace("/");
+    } catch (error) {
+      toast.error(
+        errorMessage(error, "Please verify your email and password."),
+      );
     }
   };
-
-  const handleDemoFill = (demoEmail: string, demoRole: string) => {
-    setEmail(demoEmail);
-    setPassword("password123");
-    toast.success(`Loaded demo credentials for ${demoRole}!`);
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 flex flex-col justify-center items-center p-3 sm:p-6 relative overflow-hidden select-none">
-      {/* Decorative background glows with light violet and cyan accents */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-700/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-500/15 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Main Glassmorphic Container */}
-      <div className="w-full max-w-md bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 overflow-hidden relative z-10 animate-in fade-in zoom-in-95 duration-300">
-        {/* Top Header Banner in Blue 500 theme */}
-        <div className="bg-teal-700 px-6 py-6 text-white text-center relative overflow-hidden">
-          {/* Subtle gradient pattern */}
-          <div className="absolute inset-0 bg-gradient-to-r from-teal-900 to-teal-700 opacity-90" />
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center shadow-inner mb-3 border border-white/30">
-              <Layers className="w-7 h-7 text-white stroke-[2.5]" />
-            </div>
-            <h1 className="font-serif italic font-extrabold text-2xl tracking-tight text-white drop-shadow-xs">
+    <main className="grid min-h-dvh lg:grid-cols-[1.08fr_1fr] bg-white">
+      <section className="login-brand relative flex flex-col justify-between overflow-hidden px-7 py-8 text-white sm:px-12 lg:p-16">
+        <div className="flex items-center gap-3">
+          <span className="grid size-11 place-items-center rounded-xl border border-teal-300/30 bg-teal-400/10 text-teal-200">
+            <Layers size={25} />
+          </span>
+          <div>
+            <p className="text-lg font-semibold tracking-tight">
               Smart Account
-            </h1>
-            <p className="text-xs font-semibold text-blue-100 uppercase tracking-widest mt-0.5">
-              Datta & Brothers Electrics
             </p>
-            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-medium backdrop-blur-xs border border-white/25">
-              <Sparkles className="w-3 h-3 text-violet-200" />
-              <span>Enterprise Cloud POS & Wholesale ERP</span>
-            </div>
+            <p className="text-[10px] uppercase tracking-[.22em] text-slate-300">
+              Business workspace
+            </p>
           </div>
         </div>
-
-        {/* Form Body */}
-        <div className="p-6 sm:p-7 space-y-5">
-          <div className="text-center space-y-1">
-            <h2 className="text-lg font-black text-slate-900 tracking-tight">
-              Sign in to your terminal
-            </h2>
-            <p className="text-xs text-slate-500 font-medium">
-              Enter your authorized staff credentials to continue
-            </p>
+        <div className="hidden max-w-lg py-10 lg:block lg:py-16">
+          <p className="mb-5 text-xs font-medium uppercase tracking-[.2em] text-teal-300">
+            Retail & wholesale operations
+          </p>
+          <h1 className="text-3xl font-semibold leading-[1.15] tracking-[-.04em] sm:text-4xl lg:text-5xl">
+            Your business.
+            <br />
+            <span className="text-teal-200">Working together.</span>
+          </h1>
+          <p className="mt-6 max-w-sm text-sm leading-7 text-slate-300">
+            Bring your checkout, inventory, and accounts into one organized
+            workspace.
+          </p>
+          <div className="mt-10 hidden space-y-5 sm:block">
+            {[
+              {
+                icon: ShoppingBag,
+                title: "Keep your counter moving",
+                text: "Barcode checkout, held orders, and receipts.",
+              },
+              {
+                icon: Package,
+                title: "Stay on top of inventory",
+                text: "Product records, stock counts, and replenishment.",
+              },
+              {
+                icon: BarChart3,
+                title: "See the business clearly",
+                text: "Sales reporting, customer dues, and account balances.",
+              },
+            ].map(({ icon: Icon, title, text }) => (
+              <div key={title} className="flex items-start gap-4">
+                <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-slate-600 bg-slate-800/60 text-teal-200">
+                  <Icon size={18} />
+                </span>
+                <div>
+                  <h2 className="text-sm font-medium">{title}</h2>
+                  <p className="mt-1 text-xs leading-5 text-slate-300">
+                    {text}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            {/* Email Field */}
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-700">
-                Staff Email Address
+        </div>
+        <p className="hidden text-xs text-slate-400 lg:block">
+          Smart Account · Point of sale & business management
+        </p>
+      </section>
+      <section className="flex flex-col justify-center px-7 py-12 sm:px-14 lg:px-16">
+        <div className="mx-auto w-full max-w-sm">
+          <div className="mb-7 grid size-12 place-items-center rounded-2xl border border-slate-200 bg-slate-50 text-teal-700">
+            <LockKeyhole size={22} />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-[.16em] text-teal-700">
+            Staff sign in
+          </p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+            Welcome back
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Sign in to continue to your business workspace.
+          </p>
+          <form onSubmit={handleLogin} className="mt-8 space-y-5">
+            <div>
+              <label htmlFor="email" className="pos-label">
+                Email address
+              </label>
+              <input
+                id="email"
+                name="email"
+                autoComplete="username"
+                type="email"
+                required
+                maxLength={255}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@company.com"
+                className="pos-field !min-h-12"
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="pos-label">
+                Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-4 h-4" />
-                </div>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. admin@smartpos.com"
-                  required
-                  className="w-full h-10 pl-9 pr-3 rounded-lg bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition"
-                />
-              </div>
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-slate-700">
-                  Password
-                </label>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
+                  id="password"
+                  name="password"
+                  autoComplete="current-password"
                   type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your security password"
                   required
-                  className="w-full h-10 pl-9 pr-10 rounded-lg bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter your password"
+                  className="pos-field !min-h-12 !pr-12"
                 />
                 <button
                   type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
-                  title={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 grid w-12 place-items-center text-slate-500 hover:text-slate-900"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
-
-            {/* Remember Me Toggle */}
-            <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center gap-2 cursor-pointer font-semibold text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-slate-300 text-blue-500 focus:ring-blue-400 accent-blue-500"
-                />
-                <span>Keep session active</span>
-              </label>
-
-              <span className="text-[11px] text-slate-400 font-mono">
-                Staff access
-              </span>
-            </div>
-
-            {/* Submit Button */}
+            <label className="flex items-center gap-2.5 text-xs text-slate-600">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
+                className="size-4 accent-teal-700"
+              />
+              Keep me signed in on this device
+            </label>
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 bg-teal-700 hover:bg-teal-800 active:bg-blue-700 text-white font-extrabold text-xs sm:text-sm rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="pos-button !min-h-12 w-full"
             >
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Verifying Credentials...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign In to POS Counter</span>
-                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                </>
-              )}
+              {isLoading ? "Signing in…" : "Sign in to workspace"}
+              <ArrowRight size={17} />
             </button>
           </form>
-
-          {/* Quick Demo Switcher Section (With light violet styling) */}
           {process.env.NEXT_PUBLIC_DEMO_MODE === "true" && (
-            <div className="pt-2 border-t border-slate-200 space-y-2">
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block text-center">
-                Quick 1-Click Demo Accounts
-              </span>
-
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleDemoFill("admin@smartpos.com", "Admin")}
-                  className="p-2 rounded-lg border border-violet-200 bg-violet-50 hover:bg-violet-100 hover:border-violet-300 text-violet-900 transition flex flex-col items-center justify-center gap-1 cursor-pointer"
-                >
-                  <Shield className="w-4 h-4 text-violet-700" />
-                  <span className="text-[11px] font-bold">Admin</span>
-                  <span className="text-[9px] text-violet-700 font-mono">
-                    Full Access
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleDemoFill("manager@smartpos.com", "Manager")
-                  }
-                  className="p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-slate-800 transition flex flex-col items-center justify-center gap-1 cursor-pointer"
-                >
-                  <UserCheck className="w-4 h-4 text-indigo-600" />
-                  <span className="text-[11px] font-bold">Manager</span>
-                  <span className="text-[9px] text-slate-500 font-mono">
-                    Operations
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleDemoFill("cashier@smartpos.com", "Cashier")
-                  }
-                  className="p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 text-slate-800 transition flex flex-col items-center justify-center gap-1 cursor-pointer"
-                >
-                  <Zap className="w-4 h-4 text-teal-600" />
-                  <span className="text-[11px] font-bold">Cashier</span>
-                  <span className="text-[9px] text-slate-500 font-mono">
-                    Sales Desk
-                  </span>
-                </button>
+            <div className="mt-6 border-t border-slate-200 pt-5">
+              <p className="mb-3 text-xs font-medium text-slate-600">
+                Explore with a demonstration account
+              </p>
+              <div className="flex gap-2">
+                {["admin", "manager", "cashier"].map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    className="pos-button-secondary capitalize"
+                    onClick={() => {
+                      setEmail(`${role}@smartpos.com`);
+                      setPassword("password123");
+                    }}
+                  >
+                    {role}
+                  </button>
+                ))}
               </div>
             </div>
           )}
-
-          {/* Registration Policy Notice */}
-          <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-start gap-2 text-[11px] text-slate-600">
-            <Lock className="w-3.5 h-3.5 text-violet-600 shrink-0 mt-0.5" />
+          <div className="mt-8 flex items-start gap-3 border-t border-slate-200 pt-6 text-xs leading-6 text-slate-500">
+            <ShieldCheck size={17} className="mt-1 shrink-0 text-teal-700" />
             <p>
-              <strong className="font-semibold text-slate-800">
-                Restricted Access:
-              </strong>{" "}
-              Staff and cashier accounts cannot self-register publicly. New
-              accounts are provisioned exclusively from inside the web
-              application by authenticated administrators.
+              Access is managed by your administrator. Contact them if you need
+              an account or help signing in.
             </p>
           </div>
         </div>
-
-        {/* Bottom Footer Info */}
-        <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-          <div className="flex items-center gap-1.5 font-medium">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Smart Account POS</span>
-          </div>
-          <span className="font-mono text-slate-400">Staff workspace</span>
-        </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

@@ -113,7 +113,7 @@ export function PosCustomerRow({
             <div className="flex items-center justify-between mb-1">
               <label className="text-slate-900 font-bold flex items-center gap-1">
                 <span>Customer</span>
-                <span className="text-teal-700 font-mono font-extrabold">
+                <span className="text-teal-700 font-mono font-semibold">
                   [F1]
                 </span>
               </label>

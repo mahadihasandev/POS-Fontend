@@ -19,8 +19,8 @@ export function PosHeaderBanner({
   onToggleFullscreen,
 }: PosHeaderBannerProps) {
   return (
-    <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-cyan-800 px-4 py-2.5 rounded-t-xl border-b border-teal-900/20 flex items-center justify-between shadow-sm">
-      <div className="flex items-center gap-2 text-white font-extrabold text-sm sm:text-base tracking-wide">
+    <div className="bg-slate-900 px-5 py-4 rounded-t-xl border-b border-teal-900/20 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-2 text-white font-semibold text-sm sm:text-base tracking-wide">
         <Plus className="w-4 h-4 text-teal-200 stroke-[3]" />
         <span>{title}</span>
       </div>
@@ -30,11 +30,11 @@ export function PosHeaderBanner({
         <button
           type="button"
           onClick={onOpenHoldList}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-violet-300 hover:bg-violet-200 text-slate-950 font-extrabold text-xs shadow-sm transition cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-amber-300 hover:bg-amber-200 text-slate-950 font-semibold text-xs shadow-sm transition cursor-pointer"
         >
           <PauseCircle className="w-3.5 h-3.5 text-slate-950" />
           <span>Hold List</span>
-          <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-slate-950 text-violet-300 text-[10px] font-bold">
+          <span className="ml-0.5 px-1.5 py-0.2 rounded-full bg-slate-950 text-amber-300 text-[10px] font-bold">
             {heldCount}
           </span>
         </button>

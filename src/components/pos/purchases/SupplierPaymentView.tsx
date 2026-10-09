@@ -105,11 +105,11 @@ export function SupplierPaymentView({
       {/* Top Header */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
             <DollarSign className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-base font-semibold text-slate-900 tracking-tight">
               Supplier Payment / Due Settlement
             </h1>
             <p className="text-xs text-slate-500">
@@ -132,7 +132,7 @@ export function SupplierPaymentView({
         {/* Left: Payment Entry Form (5 cols) */}
         <div className="lg:col-span-5 bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
           <form onSubmit={handleSubmit} className="space-y-3">
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-2">
               New Supplier Payment
             </h2>
 
@@ -147,7 +147,7 @@ export function SupplierPaymentView({
                   onChange={(e) =>
                     setSelectedSupplierId(Number(e.target.value))
                   }
-                  className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-violet-500 focus:outline-hidden"
+                  className="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-teal-500 focus:outline-hidden"
                 >
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -159,15 +159,15 @@ export function SupplierPaymentView({
             </div>
 
             {selectedSupplier && (
-              <div className="bg-violet-50/70 p-2.5 rounded-lg border border-violet-200 text-xs flex justify-between items-center text-violet-900">
+              <div className="bg-teal-50/70 p-2.5 rounded-lg border border-teal-200 text-xs flex justify-between items-center text-teal-900">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-violet-700">
+                  <span className="text-[10px] uppercase font-bold text-teal-700">
                     Code:
                   </span>{" "}
                   <strong>{selectedSupplier.code}</strong>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-violet-700">
+                  <span className="text-[10px] uppercase font-bold text-teal-700">
                     Phone:
                   </span>{" "}
                   <strong>{selectedSupplier.phone || "01912345671"}</strong>
@@ -267,7 +267,7 @@ export function SupplierPaymentView({
                   onChange={(e) =>
                     setPaidAmount(Math.max(0, parseFloat(e.target.value) || 0))
                   }
-                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-black text-violet-700"
+                  className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 font-bold text-teal-700"
                 />
               </div>
             </div>
@@ -276,7 +276,7 @@ export function SupplierPaymentView({
               <span className="font-bold text-slate-600">
                 Remaining Balance:
               </span>
-              <span className="font-black text-sm text-rose-600">
+              <span className="font-bold text-sm text-rose-600">
                 ৳{remainingDue.toLocaleString()}
               </span>
             </div>
@@ -287,14 +287,14 @@ export function SupplierPaymentView({
                 placeholder="Payment note / Bank reference transaction ID..."
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-violet-500"
+                className="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
               />
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-extrabold text-xs transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+              className="w-full py-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>{isSubmitting ? "Recording..." : "Submit Payment"}</span>
@@ -307,7 +307,7 @@ export function SupplierPaymentView({
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div className="flex items-center gap-2">
               <History className="w-4 h-4 text-slate-500" />
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-700">
                 Supplier Payment Ledger History
               </h2>
             </div>
@@ -344,7 +344,7 @@ export function SupplierPaymentView({
                   paymentRecords.map((rec, idx) => (
                     <tr key={rec.id || idx} className="hover:bg-slate-50">
                       <td className="p-2 text-slate-400">{idx + 1}</td>
-                      <td className="p-2 font-bold text-violet-700">
+                      <td className="p-2 font-bold text-teal-700">
                         {rec.payment_no}
                       </td>
                       <td className="p-2 text-slate-600">{rec.payment_date}</td>
@@ -352,7 +352,7 @@ export function SupplierPaymentView({
                         {rec.supplier?.name}
                       </td>
                       <td className="p-2 text-slate-600">{rec.account}</td>
-                      <td className="p-2 text-right font-extrabold text-emerald-600">
+                      <td className="p-2 text-right font-semibold text-emerald-600">
                         ৳{Number(rec.paid_amount).toLocaleString()}
                       </td>
                       <td className="p-2 text-right font-bold text-rose-600">
@@ -362,7 +362,7 @@ export function SupplierPaymentView({
                         <button
                           type="button"
                           onClick={() => window.print()}
-                          className="p-1 rounded-md text-slate-500 hover:text-violet-600"
+                          className="p-1 rounded-md text-slate-500 hover:text-teal-600"
                           title="Print Receipt"
                         >
                           <Printer className="w-3.5 h-3.5" />
