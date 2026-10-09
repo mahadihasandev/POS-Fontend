@@ -215,12 +215,18 @@ export function CrmView({ customers }: CrmViewProps) {
 
   // Filtered customer list
   const filteredCustomers = useMemo(() => {
-    return customers.filter((c) => {
+    return (customers || []).filter((c) => {
+      if (!c) return false;
+      const nameStr = c.name || "";
       const phoneStr = c.phone || "";
+      const codeStr = c.code || "";
+      const areaStr = c.area || "";
+      const term = searchTerm.toLowerCase();
       const matchesSearch =
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        phoneStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.area && c.area.toLowerCase().includes(searchTerm.toLowerCase()));
+        nameStr.toLowerCase().includes(term) ||
+        phoneStr.toLowerCase().includes(term) ||
+        codeStr.toLowerCase().includes(term) ||
+        areaStr.toLowerCase().includes(term);
       if (filterDueOnly) {
         return matchesSearch && Number(c.previous_due || 0) > 0;
       }
@@ -444,14 +450,17 @@ export function CrmView({ customers }: CrmViewProps) {
                     </td>
                   </tr>
                 ) : (
-                  filteredCustomers.map((cust) => {
-                    const due = Number(cust.previous_due || 0);
-                    const custPhone = cust.phone || "";
+                  filteredCustomers.map((cust, idx) => {
+                    const due = Number(cust?.previous_due || 0);
+                    const custPhone = cust?.phone || "";
+                    const custName = cust?.name || "Customer";
+                    const custCode = cust?.code || (cust?.id ? `ID-${cust.id}` : `CUST-${idx + 1}`);
+                    const rowKey = cust?.id ? `cust-${cust.id}` : `cust-idx-${idx}`;
                     return (
-                      <tr key={cust.id} className="hover:bg-slate-50/80 transition">
+                      <tr key={rowKey} className="hover:bg-slate-50/80 transition">
                         <td className="px-5 py-3.5">
-                          <div className="font-semibold text-slate-900">{cust.name}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{cust.code}</div>
+                          <div className="font-semibold text-slate-900">{custName}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">{custCode}</div>
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2">
