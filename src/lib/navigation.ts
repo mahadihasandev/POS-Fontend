@@ -54,5 +54,5 @@ export const workspacePages = [
   { id: "expenses", label: "Expense vouchers", group: "Finance" },
   { id: "reports", label: "Reports & audit", group: "Finance" },
   { id: "rbac", label: "Staff & permissions", group: "Administration" },
-  { id: "crm", label: "CRM & Social Channels", group: "CRM" },
+  { id: "crm", label: "CRM & Social Channels", group: "People" },
 ];

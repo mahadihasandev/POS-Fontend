@@ -12,17 +12,9 @@ import {
   ChevronDown,
   X,
   ArrowUpRight,
-  MessageSquare,
 } from "lucide-react";
 import { canOpenTab } from "@/lib/navigation";
 const groups = [
-  {
-    title: "CRM & Social",
-    icon: MessageSquare,
-    items: [
-      ["crm", "CRM & Social Outreach"],
-    ],
-  },
   {
     title: "Sales & checkout",
     icon: ShoppingCart,
@@ -62,6 +54,7 @@ const groups = [
       ["customers", "Customers"],
       ["suppliers", "Suppliers"],
       ["marketers", "Marketers & commissions"],
+      ["crm", "CRM & Social Outreach"],
     ],
   },
   {
@@ -148,28 +141,6 @@ export function PosSidebar({
               Dashboard
             </button>
           )}
-          {allowed("crm") && (
-            <button
-              aria-current={activeTab === "crm" ? "page" : undefined}
-              className={`${itemClass("crm")} flex items-center justify-between group`}
-              onClick={() => go("crm")}
-            >
-              <div className="flex gap-3 items-center">
-                <MessageSquare
-                  size={17}
-                  className={
-                    activeTab === "crm"
-                      ? "text-teal-300"
-                      : "text-emerald-400 group-hover:scale-110 transition-transform"
-                  }
-                />
-                <span className="font-medium">CRM & Social</span>
-              </div>
-              <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                New
-              </span>
-            </button>
-          )}
           <p className="px-3 pt-5 pb-2 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-400">
             Operations
           </p>
@@ -181,7 +152,7 @@ export function PosSidebar({
             const open =
               override?.tab === activeTab
                 ? override.open
-                : childActive || (override?.open ?? title === "Inventory");
+                : childActive || (override?.open ?? (title === "Inventory" || title === "People"));
             return (
               <div key={title}>
                 <button
@@ -204,10 +175,15 @@ export function PosSidebar({
                       <button
                         key={id}
                         aria-current={activeTab === id ? "page" : undefined}
-                        className={itemClass(id)}
+                        className={`${itemClass(id)} flex items-center justify-between`}
                         onClick={() => go(id)}
                       >
-                        {label}
+                        <span>{label}</span>
+                        {id === "crm" && (
+                          <span className="text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            Chat
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
