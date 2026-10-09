@@ -16,7 +16,7 @@ const getBaseUrl = (): string => {
   if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
-  return "https://pos-backend-xnf0.onrender.com/api/v1";
+  return "https://pos-backend-zxq1.vercel.app/api/v1";
 };
 
 /**
