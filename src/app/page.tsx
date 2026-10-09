@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { getCookie } from "cookies-next";
 import { useWorkspaceNavigation } from "@/lib/useWorkspaceNavigation";
 import { WorkspaceSearch } from "@/components/pos/shared/WorkspaceSearch";
 import { useGetMeQuery } from "@/redux/api/authApi";
@@ -57,17 +59,32 @@ export default function PosApp() {
     window.addEventListener("keydown", handle);
     return () => window.removeEventListener("keydown", handle);
   }, []);
+  const router = useRouter();
   const [resumedSale, setResumedSale] = useState<SaleRecord | null>(null);
   const [currentOutlet, setCurrentOutlet] = useState<string>("");
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const token = getCookie("token");
+    if (!token) {
+      setHasToken(false);
+      router.replace("/login");
+    } else {
+      setHasToken(true);
+    }
+  }, [router]);
 
   const {
     data: profile,
     isLoading: profileLoading,
     error: profileError,
     refetch: refetchProfile,
-  } = useGetMeQuery();
+  } = useGetMeQuery(undefined, {
+    skip: hasToken !== true,
+  });
   const permissions = profile?.data?.permissions || [];
   const isAdmin = profile?.data?.designation?.slug === "admin";
   const can = (permission: string) =>
@@ -115,7 +132,12 @@ export default function PosApp() {
       : workspacePages.find((page) => canOpenTab(page.id, permissions, isAdmin))
           ?.id || "";
 
-  if (profileLoading)
+  const isUnauthorized =
+    hasToken === false ||
+    (profileError as { status?: number | string })?.status === 401 ||
+    (profileError as { originalStatus?: number })?.originalStatus === 401;
+
+  if (hasToken === null || profileLoading || isUnauthorized)
     return (
       <div className="p-8">
         <QueryState loading />
