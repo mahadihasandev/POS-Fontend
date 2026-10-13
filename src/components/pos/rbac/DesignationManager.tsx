@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ShieldCheck,
   Users,
@@ -19,7 +19,10 @@ import {
   useGetUsersQuery,
   useUpdateUserDesignationMutation,
 } from "@/redux/api/rbacApi";
-import { useRegisterMutation } from "@/redux/api/authApi";
+import {
+  useRegisterMutation,
+  useRequestStaffEmailCodeMutation,
+} from "@/redux/api/authApi";
 import { Modal } from "../shared/Modal";
 import { QueryState } from "../shared/QueryState";
 
@@ -37,6 +40,20 @@ export function DesignationManager({
   const [assignRole, { isLoading: assigning }] =
     useUpdateUserDesignationMutation();
   const [register, { isLoading: registering }] = useRegisterMutation();
+  const [requestEmailCode, { isLoading: sendingCode }] =
+    useRequestStaffEmailCodeMutation();
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeSentTo, setCodeSentTo] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [resendIn, setResendIn] = useState(0);
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = window.setTimeout(
+      () => setResendIn((seconds) => Math.max(0, seconds - 1)),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [resendIn]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [draft, setDraft] = useState<number[] | null>(null);
   const [roleOpen, setRoleOpen] = useState(false);
@@ -96,19 +113,53 @@ export function DesignationManager({
       toast.error(errorMessage(error));
     }
   };
+  const sendCode = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (sendingCode || !staffForm.designation_id) return;
+    if (codeSentTo && codeSentTo === staffForm.email.trim().toLowerCase()) {
+      setCodeSent(true);
+      return;
+    }
+    try {
+      await requestEmailCode({ email: staffForm.email.trim() }).unwrap();
+      setCodeSent(true);
+      setCodeSentTo(staffForm.email.trim().toLowerCase());
+      setVerificationCode("");
+      setResendIn(60);
+      toast.success("Verification code sent to the employee's email.");
+    } catch (error) {
+      toast.error(errorMessage(error, "Could not send the verification code."));
+    }
+  };
+  const resendCode = async () => {
+    if (sendingCode || registering || resendIn > 0) return;
+    try {
+      await requestEmailCode({ email: staffForm.email.trim() }).unwrap();
+      setVerificationCode("");
+      setResendIn(60);
+      toast.success("A new code was sent.");
+    } catch (error) {
+      toast.error(errorMessage(error, "Could not resend the code."));
+    }
+  };
   const saveStaff = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (registering || !staffForm.designation_id) return;
+    if (registering || !codeSent || !staffForm.designation_id) return;
     try {
       await register({
         ...staffForm,
         name: staffForm.name.trim(),
         email: staffForm.email.trim(),
         designation_id: Number(staffForm.designation_id),
+        verification_code: verificationCode,
       }).unwrap();
       setStaffOpen(false);
       setStaffForm({ name: "", email: "", password: "", designation_id: "" });
-      toast.success("Staff account created with its assigned role.");
+      setVerificationCode("");
+      setCodeSent(false);
+      setCodeSentTo("");
+      setResendIn(0);
+      toast.success("Staff account created with a verified email address.");
     } catch (error) {
       toast.error(errorMessage(error));
     }
@@ -318,6 +369,7 @@ export function DesignationManager({
                     <tr>
                       <th>Team member</th>
                       <th>Email address</th>
+                      <th>Email status</th>
                       <th>Assigned role</th>
                     </tr>
                   </thead>
@@ -328,6 +380,19 @@ export function DesignationManager({
                           {user.name}
                         </td>
                         <td>{user.email}</td>
+                        <td>
+                          <span
+                            className={
+                              user.email_verified_at
+                                ? "rounded-full bg-teal-50 px-2 py-1 text-xs font-medium text-teal-800"
+                                : "rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800"
+                            }
+                          >
+                            {user.email_verified_at
+                              ? "Verified"
+                              : "Not verified"}
+                          </span>
+                        </td>
                         <td>
                           <select
                             aria-label={`Role for ${user.name}`}
@@ -360,7 +425,7 @@ export function DesignationManager({
                     ))}
                     {!users.length && (
                       <tr>
-                        <td colSpan={3} className="text-center">
+                        <td colSpan={4} className="text-center">
                           No matching team members.
                         </td>
                       </tr>
@@ -433,82 +498,171 @@ export function DesignationManager({
       )}
       {staffOpen && (
         <Modal
-          title="Add staff member"
+          title={codeSent ? "Verify staff email" : "Add staff member"}
           onClose={() => {
-            if (!registering) setStaffOpen(false);
+            if (!registering && !sendingCode) setStaffOpen(false);
           }}
         >
-          <form className="space-y-4" onSubmit={saveStaff}>
-            <label className="block">
-              <span className="pos-label">Full name</span>
-              <input
-                autoFocus
-                required
-                maxLength={120}
-                className="pos-field"
-                autoComplete="name"
-                value={staffForm.name}
-                onChange={(event) =>
-                  setStaffForm({ ...staffForm, name: event.target.value })
-                }
-              />
-            </label>
-            <label className="block">
-              <span className="pos-label">Email address</span>
-              <input
-                type="email"
-                required
-                maxLength={255}
-                autoComplete="email"
-                className="pos-field"
-                value={staffForm.email}
-                onChange={(event) =>
-                  setStaffForm({ ...staffForm, email: event.target.value })
-                }
-              />
-            </label>
-            <label className="block">
-              <span className="pos-label">Password</span>
-              <input
-                type="password"
-                required
-                minLength={8}
-                pattern="(?=.*[A-Za-z])(?=.*[0-9]).{8,}"
-                autoComplete="new-password"
-                className="pos-field"
-                value={staffForm.password}
-                onChange={(event) =>
-                  setStaffForm({ ...staffForm, password: event.target.value })
-                }
-              />
-              <span className="mt-1 block text-xs text-slate-500">
-                At least 8 characters, including a letter and a number.
-              </span>
-            </label>
-            <label className="block">
-              <span className="pos-label">Assigned role</span>
-              <select
-                required
-                className="pos-field"
-                value={staffForm.designation_id}
-                onChange={(event) =>
-                  setStaffForm({
-                    ...staffForm,
-                    designation_id: event.target.value,
-                  })
-                }
-              >
-                <option value="">Choose a role</option>
-                {designations.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button disabled={registering} className="pos-button w-full">
-              {registering ? "Creating…" : "Create staff account"}
-            </button>
+          <form
+            key={codeSent ? "verification" : "details"}
+            className="space-y-4"
+            onSubmit={codeSent ? saveStaff : sendCode}
+          >
+            {!codeSent ? (
+              <fieldset disabled={sendingCode} className="space-y-4">
+                <p className="text-sm text-slate-600">
+                  Add the employee details. We will email them a one-time code
+                  before creating the account.
+                </p>
+                <label className="block">
+                  <span className="pos-label">Full name</span>
+                  <input
+                    autoFocus
+                    required
+                    maxLength={120}
+                    className="pos-field"
+                    autoComplete="name"
+                    value={staffForm.name}
+                    onChange={(event) =>
+                      setStaffForm({ ...staffForm, name: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="pos-label">Employee email address</span>
+                  <input
+                    type="email"
+                    required
+                    maxLength={255}
+                    autoComplete="email"
+                    className="pos-field"
+                    value={staffForm.email}
+                    onChange={(event) =>
+                      setStaffForm({ ...staffForm, email: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="pos-label">Password</span>
+                  <input
+                    type="password"
+                    required
+                    minLength={8}
+                    pattern="(?=.*[A-Za-z])(?=.*[0-9]).{8,}"
+                    autoComplete="new-password"
+                    className="pos-field"
+                    value={staffForm.password}
+                    onChange={(event) =>
+                      setStaffForm({
+                        ...staffForm,
+                        password: event.target.value,
+                      })
+                    }
+                  />
+                  <span className="mt-1 block text-xs text-slate-500">
+                    At least 8 characters, including a letter and a number.
+                  </span>
+                </label>
+                <label className="block">
+                  <span className="pos-label">Assigned role</span>
+                  <select
+                    required
+                    className="pos-field"
+                    value={staffForm.designation_id}
+                    onChange={(event) =>
+                      setStaffForm({
+                        ...staffForm,
+                        designation_id: event.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Choose a role</option>
+                    {designations.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button disabled={sendingCode} className="pos-button w-full">
+                  {sendingCode
+                    ? "Sending code…"
+                    : codeSentTo &&
+                        codeSentTo === staffForm.email.trim().toLowerCase()
+                      ? "Continue with emailed code"
+                      : "Send verification code"}
+                </button>
+              </fieldset>
+            ) : (
+              <>
+                <div className="rounded-xl border border-teal-200 bg-teal-50 p-4">
+                  <p className="text-sm font-semibold text-slate-900">
+                    Check the employee inbox
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-600">
+                    We sent a six-digit code to{" "}
+                    <strong>{staffForm.email.trim()}</strong>. Ask the employee
+                    for the code to finish registration. It expires in 10
+                    minutes.
+                  </p>
+                </div>
+                <label className="block">
+                  <span className="pos-label">Six-digit email code</span>
+                  <input
+                    autoFocus
+                    required
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    disabled={registering || sendingCode}
+                    className="pos-field text-center font-mono text-lg tracking-[.35em]"
+                    value={verificationCode}
+                    onChange={(event) =>
+                      setVerificationCode(
+                        event.target.value.replace(/\D/g, "").slice(0, 6),
+                      )
+                    }
+                  />
+                </label>
+                <button
+                  disabled={
+                    registering || sendingCode || verificationCode.length !== 6
+                  }
+                  className="pos-button w-full"
+                >
+                  {registering
+                    ? "Verifying…"
+                    : "Verify email and create account"}
+                </button>
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <button
+                    type="button"
+                    disabled={registering || sendingCode}
+                    className="font-medium text-slate-600 hover:text-slate-900"
+                    onClick={() => {
+                      setCodeSent(false);
+                      setVerificationCode("");
+                    }}
+                  >
+                    Edit details
+                  </button>
+                  <button
+                    type="button"
+                    disabled={registering || sendingCode || resendIn > 0}
+                    className="font-medium text-teal-700 disabled:opacity-50"
+                    onClick={() => void resendCode()}
+                  >
+                    {resendIn > 0
+                      ? `Resend in ${resendIn}s`
+                      : sendingCode
+                        ? "Sending…"
+                        : "Resend code"}
+                  </button>
+                </div>
+              </>
+            )}
           </form>
         </Modal>
       )}

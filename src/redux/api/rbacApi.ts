@@ -21,6 +21,7 @@ export interface UserItem {
   id: number;
   name: string;
   email: string;
+  email_verified_at?: string | null;
   designation_id?: number | null;
   designation?: {
     id: number;
@@ -33,14 +34,22 @@ export interface UserItem {
 
 export const rbacApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getDesignations: builder.query<{ success: boolean; data: DesignationItem[] }, void>({
+    getDesignations: builder.query<
+      { success: boolean; data: DesignationItem[] },
+      void
+    >({
       query: () => "/rbac/designations",
       providesTags: ["Designations"],
     }),
 
     createDesignation: builder.mutation<
       { success: boolean; message: string; data: DesignationItem },
-      { name: string; slug: string; description?: string; permission_ids?: number[] }
+      {
+        name: string;
+        slug: string;
+        description?: string;
+        permission_ids?: number[];
+      }
     >({
       query: (body) => ({
         url: "/rbac/designations",
