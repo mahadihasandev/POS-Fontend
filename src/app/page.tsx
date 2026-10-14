@@ -149,7 +149,7 @@ export default function PosApp() {
   if (hasToken === null || profileLoading || isUnauthorized)
     return (
       <FullPageLoader
-        title="Smart Account"
+        title="Prime Account"
         message="Loading your workspace..."
         subtitle="Verifying session and synchronizing cloud database"
       />
@@ -493,7 +493,7 @@ export default function PosApp() {
         }}
       />
 
-      {/* Smartphone Bottom Navigation Bar (Visible on mobile screens) */}
+      {/* Mobile Bottom Navigation Bar (Visible on mobile screens) */}
       <PosMobileBottomNav
         activeTab={viewTab}
         onSelectTab={navigate}

@@ -1,4 +1,4 @@
-# Smart Account POS frontend
+# Prime Account POS frontend
 
 A Next.js / React / RTK Query workspace for checkout, inventory, purchasing, returns, collections, finance and staff permissions. Pair this revision with the POS-Backend modernization branch.
 

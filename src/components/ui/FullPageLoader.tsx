@@ -11,7 +11,7 @@ export interface FullPageLoaderProps {
 }
 
 export function FullPageLoader({
-  title = "Smart Account",
+  title = "Prime Account",
   message = "Loading your workspace...",
   subtitle = "Connecting to secure cloud database & verifying session",
 }: FullPageLoaderProps) {
