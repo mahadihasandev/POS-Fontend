@@ -17,10 +17,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Smart Account | Enterprise POS & ERP Billing",
+  title: "Prime Account | Enterprise POS & ERP Billing",
   description:
     "Fast, modern cloud POS, inventory management, and multi-user RBAC platform.",
-  keywords: ["Smart Account", "POS", "Point of Sale", "Billing", "ERP"],
+  keywords: ["Prime Account", "POS", "Point of Sale", "Billing", "ERP"],
 };
 
 export const viewport: Viewport = {

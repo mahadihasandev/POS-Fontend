@@ -1,4 +1,4 @@
-# Smart Account POS & Enterprise Architecture Guide
+# Prime Account POS & Enterprise Architecture Guide
 
 Full-stack Point-of-Sale (POS), inventory management, and multi-user RBAC platform built with Next.js App Router, React 19, Tailwind CSS, Redux Toolkit (RTK Query), and a Laravel 13 REST API backend.
 

@@ -110,7 +110,7 @@ export function PosSidebar({
           </span>
           <div>
             <p className="text-sm font-semibold text-white tracking-tight">
-              Smart Account
+              Prime Account
             </p>
             <p className="text-[10px] tracking-[.2em] text-slate-300 uppercase">
               Retail workspace

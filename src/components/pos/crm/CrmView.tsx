@@ -203,7 +203,7 @@ export function CrmView({ customers }: CrmViewProps) {
       title: "Order & Payment Confirmation",
       icon: "✅",
       getMessage: (c?: Customer | null) =>
-        `Dear ${c?.name || "Customer"}, we have successfully processed your order. Thank you for your continued business with Smart Account POS!`,
+        `Dear ${c?.name || "Customer"}, we have successfully processed your order. Thank you for your continued business with Prime Account POS!`,
     },
     {
       title: "Customer Support Follow-up",
@@ -499,7 +499,7 @@ export function CrmView({ customers }: CrmViewProps) {
                               onClick={() => {
                                 const msg =
                                   due > 0
-                                    ? `Dear ${cust.name}, this is Smart Account POS. Gentle reminder regarding your outstanding balance of Tk. ${due.toLocaleString()}. Thank you!`
+                                    ? `Dear ${cust.name}, this is Prime Account POS. Gentle reminder regarding your outstanding balance of Tk. ${due.toLocaleString()}. Thank you!`
                                     : `Hello ${cust.name}, hope you are doing well!`;
                                 handleLaunchWhatsApp(custPhone, cust.name, msg);
                               }}

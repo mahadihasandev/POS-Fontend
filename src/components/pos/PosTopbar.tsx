@@ -75,7 +75,7 @@ export function PosTopbar({
           <div className="grid size-9 place-items-center rounded-xl bg-teal-500">
             <Layers size={20} />
           </div>
-          <span className="hidden sm:block font-semibold">Smart Account</span>
+          <span className="hidden sm:block font-semibold">Prime Account</span>
         </div>
         <div className="hidden lg:block">
           <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-slate-300">

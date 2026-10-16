@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 import { useRouter } from "next/navigation";
 import { getCookie } from "cookies-next";
 import { useWorkspaceNavigation } from "@/lib/useWorkspaceNavigation";
@@ -44,6 +49,10 @@ import {
 } from "@/redux/api/posApi";
 import toast from "react-hot-toast";
 
+const subscribeToken = () => () => {};
+const readToken = () => Boolean(getCookie("token"));
+const serverToken = () => null;
+
 export default function PosApp() {
   const [activeTab, setActiveTab] = useWorkspaceNavigation();
   const mainRef = useRef<HTMLElement>(null);
@@ -67,17 +76,15 @@ export default function PosApp() {
   const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const hasToken = useSyncExternalStore<boolean | null>(
+    subscribeToken,
+    readToken,
+    serverToken,
+  );
 
   useEffect(() => {
-    const token = getCookie("token");
-    if (!token) {
-      setHasToken(false);
-      router.replace("/login");
-    } else {
-      setHasToken(true);
-    }
-  }, [router]);
+    if (hasToken === false) router.replace("/login");
+  }, [hasToken, router]);
 
   const {
     data: profile,
@@ -142,7 +149,7 @@ export default function PosApp() {
   if (hasToken === null || profileLoading || isUnauthorized)
     return (
       <FullPageLoader
-        title="Smart Account"
+        title="Prime Account"
         message="Loading your workspace..."
         subtitle="Verifying session and synchronizing cloud database"
       />
@@ -486,7 +493,7 @@ export default function PosApp() {
         }}
       />
 
-      {/* Smartphone Bottom Navigation Bar (Visible on mobile screens) */}
+      {/* Mobile Bottom Navigation Bar (Visible on mobile screens) */}
       <PosMobileBottomNav
         activeTab={viewTab}
         onSelectTab={navigate}

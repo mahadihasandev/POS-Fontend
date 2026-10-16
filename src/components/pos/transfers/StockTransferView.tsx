@@ -45,7 +45,7 @@ export function StockTransferView({
     outlets[0]?.name || "DATTA & BROTHERS ELECTRICS (Main Hub)",
   );
   const [destName, setDestName] = useState(
-    outlets[1]?.name || "SMART ACCOUNT CENTRAL (Branch 2)",
+    outlets[1]?.name || "PRIME ACCOUNT CENTRAL (Branch 2)",
   );
   const [transferDate, setTransferDate] = useState(localDate());
   const [note, setNote] = useState("");

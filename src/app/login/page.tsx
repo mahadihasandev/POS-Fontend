@@ -49,7 +49,7 @@ export default function LoginPage() {
           </span>
           <div>
             <p className="text-lg font-semibold tracking-tight">
-              Smart Account
+              Prime Account
             </p>
             <p className="text-[10px] uppercase tracking-[.22em] text-slate-300">
               Business workspace
@@ -102,7 +102,7 @@ export default function LoginPage() {
           </div>
         </div>
         <p className="hidden text-xs text-slate-400 lg:block">
-          Smart Account · Point of sale & business management
+          Prime Account · Point of sale & business management
         </p>
       </section>
       <section className="flex flex-col justify-center px-7 py-12 sm:px-14 lg:px-16">
